@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Flight } from '@/types/flights';
+import type { Flight, CabinClass } from '@/types/flights';
 import FlightCard from './FlightCard';
+import { searchFlightsClient } from '@/lib/clientSearch';
 
 interface Props {
   searchParams: {
@@ -22,33 +23,29 @@ type SortKey = 'recommended' | 'price' | 'duration';
 export default function FlightResults({ searchParams }: Props) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('recommended');
 
   useEffect(() => {
     setLoading(true);
-    setError(null);
-
-    const qs = new URLSearchParams({
-      origin: searchParams.origin,
-      destination: searchParams.destination,
-      departureDate: searchParams.departDate,
-      adults: String(searchParams.adults),
-      cabinClass: searchParams.cabin,
-      ...(searchParams.returnDate ? { returnDate: searchParams.returnDate } : {}),
-    });
-
-    fetch(`/api/flights?${qs}`)
-      .then((r) => { if (!r.ok) throw new Error('Search failed'); return r.json(); })
-      .then((data) => setFlights(data.flights ?? []))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    // Simulate a brief scan delay for UX
+    const timer = setTimeout(() => {
+      const results = searchFlightsClient({
+        origin: searchParams.origin,
+        destination: searchParams.destination,
+        departureDate: searchParams.departDate,
+        returnDate: searchParams.returnDate,
+        adults: searchParams.adults,
+        cabinClass: searchParams.cabin as CabinClass,
+      });
+      setFlights(results);
+      setLoading(false);
+    }, 1400);
+    return () => clearTimeout(timer);
   }, [searchParams.origin, searchParams.destination, searchParams.departDate, searchParams.returnDate, searchParams.adults, searchParams.cabin]);
 
   const sorted = [...flights].sort((a, b) => {
     if (sortBy === 'price') return a.price - b.price;
     if (sortBy === 'duration') return a.stops - b.stops;
-    // recommended: great deals first, then price
     const scoreOrder = { great: 0, good: 1, normal: 2 };
     return scoreOrder[a.dealScore] - scoreOrder[b.dealScore] || a.price - b.price;
   });
@@ -91,30 +88,6 @@ export default function FlightResults({ searchParams }: Props) {
             ))}
           </div>
           <span className="text-sm text-outline">Scanning all sources…</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="col-span-9 flex items-center justify-center py-16">
-        <div className="text-center">
-          <span className="material-symbols-outlined text-error text-4xl">error</span>
-          <p className="font-headline font-bold text-lg text-primary mt-2">Something went wrong</p>
-          <p className="text-sm text-outline mt-1">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (flights.length === 0) {
-    return (
-      <div className="col-span-9 flex items-center justify-center py-16">
-        <div className="text-center">
-          <span className="material-symbols-outlined text-outline text-4xl">flight_off</span>
-          <p className="font-headline font-bold text-lg text-primary mt-2">No flights found</p>
-          <p className="text-sm text-outline mt-1">Try different dates or a nearby airport</p>
         </div>
       </div>
     );
@@ -178,7 +151,6 @@ export default function FlightResults({ searchParams }: Props) {
             />
           </div>
         </div>
-
         <div className="bg-surface-container-highest p-8 rounded-lg space-y-4">
           <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
           <h4 className="font-headline font-bold text-xl">Verified Results</h4>
