@@ -1,124 +1,169 @@
 import type { Deal } from '@/types/flights';
-import { formatPrice, getDestinationGradient, savingsBadgeColor, formatDateShort } from '@/lib/utils';
-import SourceLinks from './SourceLinks';
-import { MapPin, Calendar, Plane, Clock } from 'lucide-react';
+import Link from 'next/link';
 
 interface Props {
   deal: Deal;
+  variant?: 'portrait' | 'landscape' | 'compact';
 }
 
-const DEAL_TYPE_STYLES: Record<string, string> = {
-  'Error Fare': 'bg-red-500/20 text-red-300 border border-red-500/30',
-  "Jack's Find": 'bg-rose-500/20 text-rose-300 border border-rose-500/30',
-  'Flash Sale': 'bg-orange-500/20 text-orange-300 border border-orange-500/30',
-  'Sale': 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
-  'Early Bird': 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
+const DEAL_TYPE_BADGE: Record<string, { icon: string; label: string }> = {
+  'Error Fare':   { icon: 'auto_awesome', label: 'ERROR FARE' },
+  "Jack's Find":  { icon: 'auto_awesome', label: 'HIDDEN DEAL' },
+  'Flash Sale':   { icon: 'bolt',          label: 'FLASH DEAL' },
+  'Sale':         { icon: 'trending_down', label: 'PRICE DROP' },
+  'Early Bird':   { icon: 'verified',      label: 'ELITE PICK' },
 };
 
-const AIRPORT_NAMES: Record<string, string> = {
-  LHR: 'Heathrow',
-  LGW: 'Gatwick',
-  STN: 'Stansted',
-  LTN: 'Luton',
-  LCY: 'City',
-};
+function buildDealUrl(deal: Deal) {
+  const params = new URLSearchParams({
+    origin: deal.departureAirport,
+    originCity: 'London',
+    destination: deal.destination.code,
+    destinationCity: deal.destination.city,
+    departDate: deal.departureDate,
+    returnDate: deal.returnDate ?? '',
+    adults: '1',
+    cabin: 'ECONOMY',
+  });
+  return `/search?${params}`;
+}
 
-export default function DealCard({ deal }: Props) {
-  const gradient = getDestinationGradient(deal.category);
-  const savingsBg = savingsBadgeColor(deal.savingsPercent);
-  const dealTypeStyle = DEAL_TYPE_STYLES[deal.dealType] ?? DEAL_TYPE_STYLES['Sale'];
-  const isGreat = deal.dealScore === 'great';
+// Tall portrait card (current month — 3-col grid)
+function PortraitCard({ deal }: { deal: Deal }) {
+  const badge = DEAL_TYPE_BADGE[deal.dealType] ?? DEAL_TYPE_BADGE['Sale'];
+  const href = buildDealUrl(deal);
 
   return (
-    <div
-      className={`glass-card glass-card-hover rounded-2xl overflow-hidden flex flex-col ${
-        isGreat ? 'deal-pulse ring-1 ring-emerald-500/30' : ''
-      }`}
-    >
-      {/* Destination header */}
-      <div className={`bg-gradient-to-br ${gradient} p-5 relative`}>
-        {/* Savings badge */}
-        <div className="absolute top-3 right-3">
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${savingsBg}`}>
-            -{deal.savingsPercent}%
-          </span>
-        </div>
-
+    <Link href={href} className="group cursor-pointer block">
+      <div className="relative aspect-[4/5] rounded-lg overflow-hidden mb-4 bg-surface-container">
+        <img
+          src={deal.imageUrl}
+          alt={deal.destination.city}
+          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
         {/* Deal type badge */}
-        <div className="mb-3">
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${dealTypeStyle}`}>
-            {deal.dealType}
+        <div className="absolute top-4 right-4 glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
+          <span
+            className="material-symbols-outlined text-secondary text-sm"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            {badge.icon}
           </span>
+          <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
         </div>
 
-        {/* Destination */}
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-3xl">{deal.destination.flag}</span>
-              <div>
-                <h3 className="text-xl font-bold text-white">{deal.destination.city}</h3>
-                <p className="text-sm text-white/70">{deal.destination.country}</p>
-              </div>
+        {/* Bottom info overlay */}
+        <div className="absolute bottom-4 left-4 right-4 p-4 bg-white/10 backdrop-blur-md rounded-lg border border-white/20">
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-white/80 text-xs font-label uppercase tracking-widest mb-1">
+                {deal.directFlight ? 'Direct' : '1 stop'} · {deal.flightDuration}
+              </p>
+              <h3 className="text-white font-headline text-2xl font-bold leading-none">
+                {deal.destination.city}
+              </h3>
             </div>
-          </div>
-
-          {/* Price */}
-          <div className="text-right">
-            <p className="text-xs text-white/50 line-through">{formatPrice(deal.originalPrice)}</p>
-            <p className="text-2xl font-black text-white">{formatPrice(deal.price)}</p>
-            <p className="text-xs text-white/60">per person</p>
+            <div className="text-right">
+              <p className="text-white/60 text-xs line-through">£{deal.originalPrice}</p>
+              <p className="text-white font-headline text-3xl font-extrabold leading-none">£{deal.price}</p>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Deal details */}
-      <div className="p-4 flex-1 flex flex-col gap-3">
-        {/* Route info */}
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-blue-400" />
-          <span>
-            London {AIRPORT_NAMES[deal.departureAirport]} ({deal.departureAirport}) →{' '}
-            {deal.destination.code}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <Calendar className="w-3.5 h-3.5 text-slate-500" />
-            <span>{formatDateShort(deal.departureDate)}</span>
-          </div>
-          {deal.nights && (
-            <div className="flex items-center gap-1.5 text-slate-400">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <span>{deal.nights} nights</span>
-            </div>
-          )}
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <Plane className="w-3.5 h-3.5 text-slate-500" />
-            <span>{deal.airline}</span>
-          </div>
-        </div>
-
-        {/* Tags */}
-        {deal.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {deal.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="text-xs px-2 py-0.5 bg-white/5 rounded-full text-slate-400 border border-white/5"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Source links */}
-        <div className="mt-auto pt-2 border-t border-white/5">
-          <SourceLinks links={deal.sourceLinks} compact />
-        </div>
-      </div>
-    </div>
+    </Link>
   );
+}
+
+// Featured landscape card (next month — 2-wide)
+export function FeaturedCard({ deal }: { deal: Deal }) {
+  const badge = DEAL_TYPE_BADGE[deal.dealType] ?? DEAL_TYPE_BADGE['Sale'];
+  const href = buildDealUrl(deal);
+
+  return (
+    <Link href={href} className="md:col-span-2 relative h-[320px] rounded-lg overflow-hidden group cursor-pointer block">
+      <img
+        src={deal.imageUrl}
+        alt={deal.destination.city}
+        loading="lazy"
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div className="absolute top-4 right-4 glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
+        <span
+          className="material-symbols-outlined text-secondary text-sm"
+          style={{ fontVariationSettings: "'FILL' 1" }}
+        >
+          {badge.icon}
+        </span>
+        <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
+      </div>
+      <div className="absolute bottom-6 left-6 flex justify-between items-end w-[calc(100%-3rem)]">
+        <div>
+          <h3 className="text-white font-headline text-3xl font-bold">
+            {deal.destination.city}, {deal.destination.country.slice(0, 2).toUpperCase()}
+          </h3>
+          <p className="text-white/70 font-label text-sm">{deal.tags[0]}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-white font-headline text-4xl font-extrabold">£{deal.price}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// Regular landscape card (next month — 1-wide)
+export function RegularCard({ deal }: { deal: Deal }) {
+  const href = buildDealUrl(deal);
+  return (
+    <Link href={href} className="relative h-[320px] rounded-lg overflow-hidden group cursor-pointer block">
+      <img
+        src={deal.imageUrl}
+        alt={deal.destination.city}
+        loading="lazy"
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+      <div className="absolute bottom-4 left-4">
+        <h3 className="text-white font-headline text-xl font-bold leading-tight">
+          {deal.destination.city}, {deal.destination.country.slice(0, 2).toUpperCase()}
+        </h3>
+        <p className="text-white font-headline text-2xl font-extrabold">£{deal.price}</p>
+      </div>
+    </Link>
+  );
+}
+
+// Compact tile (month after — 4-col table)
+export function CompactCard({ deal, isFirst }: { deal: Deal; isFirst?: boolean }) {
+  const href = buildDealUrl(deal);
+  return (
+    <Link
+      href={href}
+      className="bg-surface-container-lowest p-6 hover:bg-surface-bright transition-colors cursor-pointer block"
+    >
+      {isFirst && (
+        <span className="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter mb-4 inline-block">
+          Flash Deal
+        </span>
+      )}
+      <h3 className="font-headline text-xl font-bold text-primary mb-1">
+        {deal.destination.city}
+      </h3>
+      <p className="text-outline text-xs mb-4">{deal.tags[0]}</p>
+      <div className="flex items-end justify-between">
+        <p className="font-headline text-2xl font-extrabold">£{deal.price}</p>
+        <span className="material-symbols-outlined text-primary">
+          {isFirst ? 'bolt' : 'chevron_right'}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+export default function DealCard({ deal, variant = 'portrait' }: Props) {
+  if (variant === 'portrait') return <PortraitCard deal={deal} />;
+  if (variant === 'landscape') return <RegularCard deal={deal} />;
+  return <CompactCard deal={deal} />;
 }

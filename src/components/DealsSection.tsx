@@ -1,86 +1,140 @@
-'use client';
-
-import { useState } from 'react';
 import type { Deal } from '@/types/flights';
-import DealCard from './DealCard';
+import DealCard, { FeaturedCard, RegularCard, CompactCard } from './DealCard';
 import { getMonthBuckets } from '@/lib/utils';
-import { TrendingDown, Sparkles } from 'lucide-react';
+import { format, addMonths } from 'date-fns';
+import Link from 'next/link';
 
 interface Props {
   deals: Deal[];
 }
 
-export default function DealsSection({ deals }: Props) {
-  const months = getMonthBuckets(3);
-  const [activeMonth, setActiveMonth] = useState(0);
+const MONTH_LABELS = ['CURRENT MONTH', 'UPCOMING', 'UPCOMING'];
+const MONTH_BADGE_STYLES = [
+  'bg-secondary-fixed text-on-secondary-container',
+  'bg-surface-container-highest text-on-surface-variant',
+  'bg-surface-container-highest text-on-surface-variant',
+];
 
-  const filtered = deals.filter((d) => d.month === months[activeMonth].month);
-  const greatDeals = filtered.filter((d) => d.dealScore === 'great').length;
+function sectionTitle(offset: number): string {
+  const d = addMonths(new Date(), offset);
+  return format(d, 'MMMM');
+}
+
+function ViewAllLink({ text, href }: { text: string; href: string }) {
+  return (
+    <Link href={href} className="text-primary font-bold flex items-center gap-1 hover:underline underline-offset-4 text-sm">
+      {text}
+      <span className="material-symbols-outlined text-sm">arrow_forward</span>
+    </Link>
+  );
+}
+
+// === SECTION 0: Current month — 3 portrait cards ===
+function CurrentMonthSection({ deals, offset }: { deals: Deal[]; offset: number }) {
+  const shown = deals.slice(0, 3);
+  const month = sectionTitle(offset);
+  return (
+    <section>
+      <div className="flex items-baseline justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <h2 className="font-headline text-3xl font-bold">Impromptu Trips: {month}</h2>
+          <span className={`${MONTH_BADGE_STYLES[0]} px-3 py-1 rounded-full text-xs font-bold font-label`}>
+            {MONTH_LABELS[0]}
+          </span>
+        </div>
+        <ViewAllLink text={`View all ${month} deals`} href={`/search?origin=LON&destination=ANY&departDate=&cabin=ECONOMY&adults=1`} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {shown.map((deal) => (
+          <DealCard key={deal.id} deal={deal} variant="portrait" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// === SECTION 1: Next month — featured 2-wide + 2 regular ===
+function NextMonthSection({ deals, offset }: { deals: Deal[]; offset: number }) {
+  const month = sectionTitle(offset);
+  const featured = deals[0];
+  const regulars = deals.slice(1, 3);
 
   return (
-    <section className="py-12 px-4 sm:px-6 max-w-7xl mx-auto">
-      {/* Section header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingDown className="w-5 h-5 text-blue-400" />
-            <h2 className="text-2xl font-bold text-white">Hot Deals</h2>
-          </div>
-          <p className="text-slate-400 text-sm">
-            Curated deals for spontaneous travel — error fares, flash sales &amp; hidden gems
-          </p>
+    <section>
+      <div className="flex items-baseline justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <h2 className="font-headline text-3xl font-bold">Impromptu Trips: {month}</h2>
+          <span className={`${MONTH_BADGE_STYLES[1]} px-3 py-1 rounded-full text-xs font-bold font-label tracking-wide`}>
+            {MONTH_LABELS[1]}
+          </span>
         </div>
-
-        {greatDeals > 0 && (
-          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2">
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm text-emerald-400 font-medium">
-              {greatDeals} great deal{greatDeals !== 1 ? 's' : ''} this period
-            </span>
-          </div>
-        )}
+        <ViewAllLink text={`Browse ${month}`} href={`/search?origin=LON&destination=ANY&departDate=&cabin=ECONOMY&adults=1`} />
       </div>
 
-      {/* Month tabs */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-1">
-        {months.map((m, i) => {
-          const count = deals.filter((d) => d.month === m.month).length;
-          return (
-            <button
-              key={m.month}
-              onClick={() => setActiveMonth(i)}
-              className={`month-tab flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
-                activeMonth === i
-                  ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
-                  : 'bg-white/4 border-white/8 text-slate-400 hover:text-slate-200 hover:bg-white/6'
-              }`}
-            >
-              {i === 0 ? 'This Month' : m.label}
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeMonth === i ? 'bg-blue-500/30 text-blue-300' : 'bg-white/10 text-slate-500'
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {featured && <FeaturedCard deal={featured} />}
+        {regulars.map((deal) => (
+          <RegularCard key={deal.id} deal={deal} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// === SECTION 2: Month after — compact 4-col tiles ===
+function MonthAfterSection({ deals, offset }: { deals: Deal[]; offset: number }) {
+  const month = sectionTitle(offset);
+
+  const SEASON_LABEL_MAP: Record<string, string> = {
+    December: 'FESTIVE SEASON',
+    May:      'SUMMER AHEAD',
+    June:     'SUMMER AHEAD',
+    July:     'PEAK SUMMER',
+    August:   'PEAK SUMMER',
+    September:'AUTUMN TRAVEL',
+    October:  'AUTUMN TRAVEL',
+    November: 'WINTER DEALS',
+    January:  'NEW YEAR DEALS',
+    February: 'WINTER ESCAPES',
+    March:    'SPRING PREVIEW',
+    April:    'SPRING TRAVEL',
+  };
+  const badge = SEASON_LABEL_MAP[month] ?? 'UPCOMING';
+
+  return (
+    <section>
+      <div className="flex items-baseline justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <h2 className="font-headline text-3xl font-bold">Impromptu Trips: {month}</h2>
+          <span className={`${MONTH_BADGE_STYLES[2]} px-3 py-1 rounded-full text-xs font-bold font-label tracking-wide`}>
+            {badge}
+          </span>
+        </div>
+        <ViewAllLink text={`Search ${month.toLowerCase()} routes`} href={`/search?origin=LON&destination=ANY&departDate=&cabin=ECONOMY&adults=1`} />
       </div>
 
-      {/* Deals grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
-          <p className="text-lg">No deals found for this period.</p>
-          <p className="text-sm mt-1">Check back soon — new deals are added daily.</p>
-        </div>
-      ) : (
-        <div className="deals-grid">
-          {filtered.map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
+      <div className="bg-surface-container-low rounded-xl p-1 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
+          {deals.slice(0, 4).map((deal, i) => (
+            <CompactCard key={deal.id} deal={deal} isFirst={i === 0} />
           ))}
         </div>
-      )}
+      </div>
     </section>
+  );
+}
+
+export default function DealsSection({ deals }: Props) {
+  const months = getMonthBuckets(3);
+
+  const buckets = months.map((m) => deals.filter((d) => d.month === m.month));
+
+  return (
+    <div className="space-y-24">
+      <CurrentMonthSection deals={buckets[0]} offset={0} />
+      <NextMonthSection deals={buckets[1]} offset={1} />
+      <MonthAfterSection deals={buckets[2]} offset={2} />
+    </div>
   );
 }

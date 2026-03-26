@@ -60,6 +60,7 @@ export interface Flight {
   sourceLinks: SourceLink[];
   airline: string;
   airlineCode: string;
+  primarySource?: FlightSource;
 }
 
 export type DestinationCategory =
@@ -85,9 +86,13 @@ export interface Deal {
   airline: string;
   dealScore: DealScore;
   dealType: string;
-  month: string; // 'YYYY-MM'
+  month: string;
   sourceLinks: SourceLink[];
   category: DestinationCategory;
   departureAirport: LondonAirport;
   tags: string[];
+  imageUrl: string;
+  flightDuration?: string;
+  directFlight?: boolean;
+  countryCode?: string;
 }

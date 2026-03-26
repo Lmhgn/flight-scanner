@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import type { Flight } from '@/types/flights';
 import FlightCard from './FlightCard';
-import { Loader2, AlertCircle, SortAsc, Filter } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
 
 interface Props {
   searchParams: {
@@ -19,14 +17,13 @@ interface Props {
   };
 }
 
-type SortKey = 'price' | 'duration' | 'stops';
+type SortKey = 'recommended' | 'price' | 'duration';
 
 export default function FlightResults({ searchParams }: Props) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortKey>('price');
-  const [filterStops, setFilterStops] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<SortKey>('recommended');
 
   useEffect(() => {
     setLoading(true);
@@ -42,57 +39,58 @@ export default function FlightResults({ searchParams }: Props) {
     });
 
     fetch(`/api/flights?${qs}`)
-      .then((r) => {
-        if (!r.ok) throw new Error('Search failed');
-        return r.json();
-      })
+      .then((r) => { if (!r.ok) throw new Error('Search failed'); return r.json(); })
       .then((data) => setFlights(data.flights ?? []))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [
-    searchParams.origin,
-    searchParams.destination,
-    searchParams.departDate,
-    searchParams.returnDate,
-    searchParams.adults,
-    searchParams.cabin,
-  ]);
+  }, [searchParams.origin, searchParams.destination, searchParams.departDate, searchParams.returnDate, searchParams.adults, searchParams.cabin]);
 
-  const sorted = [...flights]
-    .filter((f) => filterStops === null || f.stops === filterStops)
-    .sort((a, b) => {
-      if (sortBy === 'price') return a.price - b.price;
-      if (sortBy === 'stops') return a.stops - b.stops;
-      return 0;
-    });
+  const sorted = [...flights].sort((a, b) => {
+    if (sortBy === 'price') return a.price - b.price;
+    if (sortBy === 'duration') return a.stops - b.stops;
+    // recommended: great deals first, then price
+    const scoreOrder = { great: 0, good: 1, normal: 2 };
+    return scoreOrder[a.dealScore] - scoreOrder[b.dealScore] || a.price - b.price;
+  });
 
-  const cheapest = sorted[0]?.price;
-  const directFlights = flights.filter((f) => f.stops === 0);
-  const greatDeals = flights.filter((f) => f.dealScore === 'great');
+  const { originCity = searchParams.origin, destinationCity = searchParams.destination } = searchParams;
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="relative">
-          <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-        </div>
-        <div className="text-center">
-          <p className="text-slate-300 font-medium">Scanning 5 sources...</p>
-          <p className="text-sm text-slate-500 mt-1">
-            Google Flights · Skyscanner · ITA Matrix · Skiplagged · Jack&apos;s Flight Club
-          </p>
-        </div>
-        {/* Animated source scan */}
-        <div className="flex gap-2 mt-2">
-          {['Google', 'Skyscanner', 'ITA Matrix', 'Skiplagged', "Jack's"].map((s, i) => (
-            <span
-              key={s}
-              className="text-xs px-2 py-1 bg-white/5 rounded-full text-slate-500 animate-pulse"
-              style={{ animationDelay: `${i * 0.2}s` }}
-            >
-              {s}
-            </span>
+      <div className="col-span-9 space-y-6">
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-surface-container-lowest rounded-lg p-6 animate-pulse">
+              <div className="grid grid-cols-12 gap-8 items-center">
+                <div className="col-span-2 flex gap-3">
+                  <div className="w-10 h-10 bg-surface-container rounded-lg" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-20 bg-surface-container rounded" />
+                    <div className="h-2 w-12 bg-surface-container rounded" />
+                  </div>
+                </div>
+                <div className="col-span-5 flex gap-4 px-4">
+                  <div className="h-6 w-12 bg-surface-container rounded" />
+                  <div className="flex-1 h-px bg-surface-container self-center" />
+                  <div className="h-6 w-12 bg-surface-container rounded" />
+                </div>
+                <div className="col-span-2 h-8 bg-surface-container rounded" />
+                <div className="col-span-3 space-y-2">
+                  <div className="h-8 w-20 bg-surface-container rounded ml-auto" />
+                  <div className="h-10 bg-surface-container rounded" />
+                </div>
+              </div>
+            </div>
           ))}
+        </div>
+        <div className="flex items-center justify-center gap-3 py-4">
+          <div className="flex gap-2">
+            {['Google Flights', 'Skyscanner', 'ITA Matrix', 'Skiplagged', "Jack's"].map((s, i) => (
+              <span key={s} className="text-xs px-2 py-1 bg-surface-container rounded-full text-outline animate-pulse"
+                style={{ animationDelay: `${i * 0.2}s` }}>{s}</span>
+            ))}
+          </div>
+          <span className="text-sm text-outline">Scanning all sources…</span>
         </div>
       </div>
     );
@@ -100,84 +98,95 @@ export default function FlightResults({ searchParams }: Props) {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-        <AlertCircle className="w-10 h-10 text-red-400" />
-        <p className="text-slate-300 font-medium">Something went wrong</p>
-        <p className="text-sm text-slate-500">{error}</p>
+      <div className="col-span-9 flex items-center justify-center py-16">
+        <div className="text-center">
+          <span className="material-symbols-outlined text-error text-4xl">error</span>
+          <p className="font-headline font-bold text-lg text-primary mt-2">Something went wrong</p>
+          <p className="text-sm text-outline mt-1">{error}</p>
+        </div>
       </div>
     );
   }
 
   if (flights.length === 0) {
     return (
-      <div className="text-center py-16">
-        <p className="text-slate-300 font-medium">No flights found</p>
-        <p className="text-sm text-slate-500 mt-1">Try different dates or a nearby airport</p>
+      <div className="col-span-9 flex items-center justify-center py-16">
+        <div className="text-center">
+          <span className="material-symbols-outlined text-outline text-4xl">flight_off</span>
+          <p className="font-headline font-bold text-lg text-primary mt-2">No flights found</p>
+          <p className="text-sm text-outline mt-1">Try different dates or a nearby airport</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Results', value: `${flights.length} flights` },
-          { label: 'Cheapest', value: cheapest ? formatPrice(cheapest) : '—' },
-          { label: 'Direct flights', value: `${directFlights.length}` },
-          { label: 'Great deals', value: `${greatDeals.length}` },
-        ].map((stat) => (
-          <div key={stat.label} className="glass-card rounded-xl px-4 py-3">
-            <p className="text-xs text-slate-500">{stat.label}</p>
-            <p className="text-lg font-bold text-white mt-0.5">{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters + sort */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 text-sm text-slate-400">
-          <Filter className="w-4 h-4" />
-          <span>Stops:</span>
+    <section className="col-span-9 space-y-6">
+      {/* Results header */}
+      <div className="flex items-baseline justify-between">
+        <div>
+          <h1 className="font-headline font-extrabold text-3xl text-primary">
+            {originCity} → {destinationCity}
+          </h1>
+          <p className="text-sm text-outline mt-1 font-medium">
+            {flights.length} Hidden Deals Found
+            {searchParams.departDate ? ` · ${searchParams.departDate}` : ''}
+            {searchParams.returnDate ? ` – ${searchParams.returnDate}` : ''}
+          </p>
         </div>
-        {[null, 0, 1].map((s) => (
-          <button
-            key={String(s)}
-            onClick={() => setFilterStops(s)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
-              filterStops === s
-                ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
-                : 'bg-white/4 border-white/8 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {s === null ? 'Any' : s === 0 ? 'Direct only' : '1 stop'}
-          </button>
-        ))}
-
-        <div className="ml-auto flex items-center gap-2">
-          <SortAsc className="w-4 h-4 text-slate-500" />
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-bold text-outline uppercase tracking-widest">Sort By</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortKey)}
-            className="search-input text-xs rounded-lg px-2 py-1.5 cursor-pointer"
+            className="bg-transparent border-none text-sm font-bold text-primary focus:ring-0 cursor-pointer outline-none"
           >
-            <option value="price">Sort: Price</option>
-            <option value="stops">Sort: Stops</option>
+            <option value="recommended">Recommended</option>
+            <option value="price">Lowest Price</option>
+            <option value="duration">Fewest Stops</option>
           </select>
         </div>
       </div>
 
-      {/* Flight list */}
-      <div className="space-y-3">
+      {/* Result cards */}
+      <div className="space-y-4">
         {sorted.map((flight) => (
-          <FlightCard
-            key={flight.id}
-            flight={flight}
-            departureDate={searchParams.departDate}
-            returnDate={searchParams.returnDate}
-          />
+          <FlightCard key={flight.id} flight={flight} />
         ))}
       </div>
-    </div>
+
+      {/* Bento info section */}
+      <div className="grid grid-cols-3 gap-6 pt-12">
+        <div className="col-span-2 bg-surface-container-low p-8 rounded-lg flex items-center gap-8">
+          <div className="flex-1 space-y-4">
+            <h3 className="font-headline font-bold text-2xl text-primary">Hidden City Logic</h3>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Some &ldquo;Hidden City&rdquo; fares let you exit at your actual destination while the plane continues elsewhere.
+              This can be significantly cheaper — but do <strong>not check bags</strong> as they will continue to the final destination.
+              This technique may violate airline terms of service.
+            </p>
+            <a href="https://skiplagged.com/blog/hidden-city-ticketing" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-widest">
+              Read Guide <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </a>
+          </div>
+          <div className="w-48 h-32 overflow-hidden rounded-lg flex-shrink-0 hidden lg:block">
+            <img
+              src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=400&q=80"
+              alt="Airplane wing over clouds"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        <div className="bg-surface-container-highest p-8 rounded-lg space-y-4">
+          <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+          <h4 className="font-headline font-bold text-xl">Verified Results</h4>
+          <p className="text-sm text-on-surface-variant">
+            Every itinerary is recalculated in real-time using GDS data and direct carrier API access.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }

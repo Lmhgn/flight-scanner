@@ -1,39 +1,34 @@
 import Link from 'next/link';
-import { Plane, Zap } from 'lucide-react';
 
 export default function Header() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#020914]/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-500 transition-colors">
-            <Plane className="w-4 h-4 text-white" strokeWidth={2.5} />
-          </div>
-          <span className="font-bold text-white text-base tracking-tight">
-            Flight<span className="text-blue-400">Scanner</span>
-          </span>
-        </Link>
+    <header className="sticky top-0 w-full z-50 bg-surface-container-low shadow-[0_4px_20px_-10px_rgba(0,52,111,0.1)]">
+      <div className="flex items-center justify-between px-6 md:px-10 py-4 max-w-[1600px] mx-auto">
+        <div className="flex items-center gap-8 md:gap-12">
+          <Link href="/" className="text-2xl font-extrabold tracking-tighter text-primary font-headline">
+            FlightFlux
+          </Link>
 
-        <div className="flex items-center gap-3">
-          {/* Live indicator */}
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-            <div className="live-dot" />
-            <span>Live prices</span>
-          </div>
+          <nav className="hidden md:flex items-center gap-8 font-headline text-sm font-medium tracking-wide">
+            <Link
+              href="/"
+              className="text-primary font-bold border-b-2 border-primary pb-1"
+            >
+              Explore Deals
+            </Link>
+            <a href="#" className="text-slate-500 hover:text-primary transition-colors">Saved Trips</a>
+            <a href="#" className="text-slate-500 hover:text-primary transition-colors">Price Tracker</a>
+            <a href="#" className="text-slate-500 hover:text-primary transition-colors">Settings</a>
+          </nav>
+        </div>
 
-          <div className="hidden sm:flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
-            <Zap className="w-3 h-3 text-emerald-400" />
-            <span className="text-xs text-emerald-400 font-medium">5 sources checked</span>
-          </div>
-
-          <a
-            href="https://www.jacksflight.club"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden md:block text-xs text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            Jack&apos;s Flight Club
-          </a>
+        <div className="flex items-center gap-2">
+          <button className="p-2 hover:bg-surface-container rounded-lg transition-all duration-200">
+            <span className="material-symbols-outlined text-outline">notifications</span>
+          </button>
+          <button className="p-2 hover:bg-surface-container rounded-lg transition-all duration-200">
+            <span className="material-symbols-outlined text-outline">account_circle</span>
+          </button>
         </div>
       </div>
     </header>

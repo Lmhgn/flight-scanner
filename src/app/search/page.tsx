@@ -1,9 +1,8 @@
 import Header from '@/components/Header';
 import SearchForm from '@/components/SearchForm';
 import FlightResults from '@/components/FlightResults';
-import { ArrowLeft, Plane } from 'lucide-react';
+import SidebarFilters from '@/components/SidebarFilters';
 import Link from 'next/link';
-import { formatDateMedium } from '@/lib/utils';
 
 interface SearchPageProps {
   searchParams: {
@@ -31,56 +30,31 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
   } = searchParams;
 
   const parsedAdults = parseInt(adults, 10);
-  const depFormatted = departDate ? formatDateMedium(departDate) : '';
-  const retFormatted = returnDate ? formatDateMedium(returnDate) : '';
-
   const hasValidSearch = !!(origin && destination && departDate && destination !== 'ANY');
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
 
-      <div className="pt-14 max-w-5xl mx-auto px-4 sm:px-6 py-8">
-        {/* Back link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to deals
-        </Link>
-
-        {/* Search summary header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-            <Plane className="w-4 h-4 text-blue-400" />
-            <span>{originCity}</span>
-            <span>→</span>
-            <span className="text-white font-medium">{destinationCity}</span>
-            {destination !== 'ANY' && (
-              <span className="text-xs bg-white/6 px-2 py-0.5 rounded-full ml-1">({destination})</span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-3 text-sm text-slate-500">
-            {depFormatted && <span>{depFormatted}</span>}
-            {retFormatted && <span>→ {retFormatted}</span>}
-            <span>{parsedAdults} passenger{parsedAdults !== 1 ? 's' : ''}</span>
-            <span className="capitalize">{cabin.toLowerCase().replace('_', ' ')}</span>
-          </div>
-        </div>
-
-        {/* Refine search (minimal) */}
-        <div className="mb-8">
+      {/* Compact search bar */}
+      <div className="border-b border-outline-variant/20 bg-surface-container-low">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-10 py-4">
           <SearchForm minimal />
         </div>
+      </div>
 
-        {/* Results */}
+      <main className="flex-grow max-w-[1600px] mx-auto w-full px-6 md:px-10 py-8 grid grid-cols-12 gap-8">
+        {/* Sidebar */}
+        <SidebarFilters />
+
+        {/* Results area */}
         {!hasValidSearch ? (
-          <div className="text-center py-16">
-            <p className="text-slate-300 font-medium text-lg mb-2">Choose a destination to search</p>
-            <p className="text-slate-500 text-sm">
-              Select a specific city above, or browse the deals on the{' '}
-              <Link href="/" className="text-blue-400 hover:text-blue-300">home page</Link>.
+          <div className="col-span-9 flex flex-col items-center justify-center py-24 text-center gap-4">
+            <span className="material-symbols-outlined text-outline text-5xl">travel_explore</span>
+            <h2 className="font-headline font-bold text-2xl text-primary">Choose a destination</h2>
+            <p className="text-on-surface-variant max-w-sm">
+              Select a specific destination above to search for flights, or browse the{' '}
+              <Link href="/" className="text-secondary font-medium hover:underline">home page deals</Link>.
             </p>
           </div>
         ) : (
@@ -97,7 +71,30 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
             }}
           />
         )}
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full py-12 px-6 md:px-10 mt-auto bg-surface-container-low border-t border-outline-variant/15">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:flex lg:justify-between items-center gap-8 max-w-[1600px] mx-auto">
+          <div className="space-y-2">
+            <span className="font-headline font-bold text-lg text-on-surface">FlightFlux</span>
+            <p className="font-body text-xs uppercase tracking-widest text-outline">
+              © {new Date().getFullYear()} FlightFlux. Editorial Aviation &amp; High-Trust Travel.
+            </p>
+          </div>
+          <nav className="flex flex-wrap gap-6 lg:gap-12">
+            {['About Us', 'Hidden Deals Guide', 'Privacy', 'Terms', 'API Access'].map((item) => (
+              <a
+                key={item}
+                href="#"
+                className="font-body text-xs uppercase tracking-widest text-outline hover:underline decoration-secondary underline-offset-4 transition-colors"
+              >
+                {item}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

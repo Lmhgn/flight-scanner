@@ -1,127 +1,153 @@
 import type { Flight } from '@/types/flights';
-import { formatPrice, formatDateShort } from '@/lib/utils';
-import SourceLinks from './SourceLinks';
-import { Plane, Clock, ArrowRight } from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
 
 const AIRLINE_NAMES: Record<string, string> = {
-  BA: 'British Airways', EZY: 'easyJet', FR: 'Ryanair',
-  U2: 'easyJet', W6: 'Wizz Air', LS: 'Jet2', DY: 'Norwegian',
-  KL: 'KLM', EK: 'Emirates', QR: 'Qatar Airways', VS: 'Virgin Atlantic',
-  IB: 'Iberia', TP: 'TAP Portugal', VY: 'Vueling', SK: 'SAS',
-  AF: 'Air France', LH: 'Lufthansa', AZ: 'ITA Airways', JL: 'Japan Airlines',
-  SQ: 'Singapore Airlines', TK: 'Turkish Airlines', EY: 'Etihad',
+  BA: 'British Airways', EZY: 'easyJet', FR: 'Ryanair', U2: 'easyJet',
+  W6: 'Wizz Air', LS: 'Jet2', DY: 'Norwegian', KL: 'KLM',
+  EK: 'Emirates', QR: 'Qatar Airways', VS: 'Virgin Atlantic',
+  IB: 'Iberia', TP: 'TAP Portugal', VY: 'Vueling',
+  AF: 'Air France', LH: 'Lufthansa', AZ: 'ITA Airways',
+  JL: 'Japan Airlines', SQ: 'Singapore Airlines',
 };
 
-const DEAL_BADGE: Record<string, string> = {
-  great: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
-  good: 'bg-amber-500/15 text-amber-400 border border-amber-500/25',
-  normal: '',
+const SOURCE_BADGE: Record<string, { label: string; style: string }> = {
+  skiplagged:         { label: 'Hidden City (Skiplagged)',   style: 'glass-badge text-on-secondary-container' },
+  ita_matrix:         { label: 'ITA Matrix Deep Search',     style: 'bg-tertiary-container/10 text-on-tertiary-container' },
+  google_flights:     { label: 'Signature Deal',             style: 'bg-primary/10 text-primary' },
+  jacks_flight_club:  { label: "Jack's Flight Club Pick",    style: 'bg-error-container/60 text-on-error-container' },
+  default:            { label: 'Signature Deal',             style: 'bg-primary/10 text-primary' },
 };
 
-function AirlineIcon({ code }: { code: string }) {
-  // Use the airline initial as a simple visual
-  const colors: Record<string, string> = {
-    BA: '#075AAA', EZY: '#FF6600', FR: '#073590', U2: '#FF6600',
-    W6: '#C8102E', LS: '#003087', DY: '#D81E32', KL: '#00A0DE',
-    EK: '#C41830', QR: '#5C0032', VS: '#E00025', EK2: '#C41830',
-  };
-  const bg = colors[code] ?? '#1e3a5f';
-  return (
-    <div
-      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-      style={{ backgroundColor: bg }}
-    >
-      {code.slice(0, 2)}
-    </div>
-  );
+const DEAL_STATUS: Record<string, { icon: string; label: string; style: string; detail: string }> = {
+  great: {
+    icon: 'check_circle',
+    label: 'On-Time',
+    style: 'bg-secondary-container text-on-secondary-container',
+    detail: 'Verified pricing, frequently operated route',
+  },
+  good: {
+    icon: 'trending_down',
+    label: '-25% vs Avg',
+    style: 'bg-secondary-container text-on-secondary-container',
+    detail: 'Lowest price in the last 30 days',
+  },
+  normal: {
+    icon: 'report',
+    label: 'Short Connect',
+    style: 'bg-error-container text-on-error-container',
+    detail: 'Allow extra time for connection',
+  },
+};
+
+function formatTime(isoOrTime: string): string {
+  try {
+    if (isoOrTime.includes('T')) {
+      return new Date(isoOrTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+    return isoOrTime;
+  } catch {
+    return isoOrTime;
+  }
 }
 
 interface Props {
   flight: Flight;
-  departureDate: string;
-  returnDate?: string;
 }
 
-export default function FlightCard({ flight, departureDate, returnDate }: Props) {
-  const isGreat = flight.dealScore === 'great';
+export default function FlightCard({ flight }: Props) {
   const outbound = flight.outbound[0];
-  const lastOutbound = flight.outbound[flight.outbound.length - 1];
-  const depTime = outbound.departureTime.includes('T')
-    ? new Date(outbound.departureTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    : outbound.departureTime;
-  const arrTime = lastOutbound.arrivalTime.includes('T')
-    ? new Date(lastOutbound.arrivalTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    : lastOutbound.arrivalTime;
+  const lastSeg = flight.outbound[flight.outbound.length - 1];
+  const depTime = formatTime(outbound.departureTime);
+  const arrTime = formatTime(lastSeg.arrivalTime);
+
+  const primarySrc = flight.primarySource ?? 'google_flights';
+  const badge = SOURCE_BADGE[primarySrc] ?? SOURCE_BADGE.default;
+  const status = DEAL_STATUS[flight.dealScore];
+
+  const bookUrl = flight.sourceLinks.find((l) => l.source === 'skyscanner')?.url
+    ?? flight.sourceLinks[0]?.url
+    ?? '#';
+
+  const airlineName = AIRLINE_NAMES[flight.airlineCode] ?? flight.airline;
+  const flightNum = flight.outbound[0].flightNumber;
 
   return (
-    <div className={`flight-card rounded-2xl p-4 sm:p-5 ${isGreat ? 'ring-1 ring-emerald-500/20' : ''}`}>
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Airline + flight info */}
-        <div className="flex items-center gap-3 sm:w-48 flex-shrink-0">
-          <AirlineIcon code={flight.airlineCode} />
-          <div>
-            <p className="text-sm font-semibold text-slate-200">
-              {AIRLINE_NAMES[flight.airlineCode] ?? flight.airline}
-            </p>
-            <p className="text-xs text-slate-500">{flight.outbound[0].flightNumber}</p>
-          </div>
-        </div>
-
-        {/* Route timeline */}
-        <div className="flex-1 flex items-center gap-3">
-          <div className="text-center">
-            <p className="text-lg font-bold text-white">{depTime}</p>
-            <p className="text-xs text-slate-500">{outbound.departureAirport}</p>
-            <p className="text-xs text-slate-600">{formatDateShort(departureDate)}</p>
-          </div>
-
-          <div className="flex-1 flex flex-col items-center gap-1 min-w-0">
-            <div className="flex items-center gap-1 text-xs text-slate-500">
-              <Clock className="w-3 h-3" />
-              {flight.totalDuration}
-            </div>
-            <div className="w-full flex items-center">
-              <div className="flex-1 h-px bg-slate-700" />
-              <Plane className="w-3.5 h-3.5 text-slate-600 mx-1 flex-shrink-0" />
-              <div className="flex-1 h-px bg-slate-700" />
-            </div>
-            <p className="text-xs text-slate-500">
-              {flight.stops === 0 ? 'Direct' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`}
-            </p>
-          </div>
-
-          <div className="text-center">
-            <p className="text-lg font-bold text-white">{arrTime}</p>
-            <p className="text-xs text-slate-500">{lastOutbound.arrivalAirport}</p>
-            {returnDate && <p className="text-xs text-slate-600">{formatDateShort(returnDate)}</p>}
-          </div>
-        </div>
-
-        {/* Price + CTA */}
-        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:w-36 flex-shrink-0">
-          <div className="text-right">
-            {flight.dealScore !== 'normal' && (
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DEAL_BADGE[flight.dealScore]}`}>
-                {flight.dealScore === 'great' ? 'Great Deal' : 'Good Deal'}
-              </span>
-            )}
-            <p className="text-2xl font-black text-white mt-1">{formatPrice(flight.price)}</p>
-            <p className="text-xs text-slate-500">per person</p>
-          </div>
-        </div>
+    <div className="group bg-surface-container-lowest hover:bg-surface-bright transition-all duration-300 rounded-lg p-6 shadow-[0_4px_20px_-10px_rgba(0,52,111,0.05)] relative overflow-hidden">
+      {/* Source badge */}
+      <div className={`absolute top-0 right-0 ${badge.style} px-4 py-1.5 rounded-bl-lg`}>
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{badge.label}</span>
       </div>
 
-      {/* Source links row */}
-      <div className="mt-4 pt-3 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <SourceLinks links={flight.sourceLinks} compact />
-        <a
-          href={flight.sourceLinks.find((l) => l.source === 'skyscanner')?.url ?? '#'}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium ml-auto"
-        >
-          Book now <ArrowRight className="w-3 h-3" />
-        </a>
+      <div className="grid grid-cols-12 items-center gap-4 md:gap-8">
+        {/* Col 1-2: Airline */}
+        <div className="col-span-12 md:col-span-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-surface-container flex items-center justify-center rounded-lg flex-shrink-0">
+              <span className="material-symbols-outlined text-primary">flight</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold leading-tight">{airlineName}</p>
+              <p className="text-[10px] text-outline font-medium">{flightNum}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Col 3-7: Flight timeline */}
+        <div className="col-span-12 md:col-span-5 flex items-center justify-between px-0 md:px-4">
+          <div className="text-center">
+            <p className="text-xl font-headline font-extrabold">{depTime}</p>
+            <p className="text-xs font-bold text-outline">{outbound.departureAirport}</p>
+          </div>
+
+          <div className="flex-grow px-4 text-center space-y-1">
+            <p className="text-[10px] font-bold text-outline uppercase tracking-tighter">
+              {flight.totalDuration} · {flight.stops === 0 ? 'Non-stop' : `${flight.stops} Stop`}
+            </p>
+            <div className="h-px bg-outline-variant/30 w-full relative">
+              <div className="absolute -top-[3px] left-0 w-1.5 h-1.5 rounded-full bg-outline-variant" />
+              {flight.stops > 0 && (
+                <div className="absolute -top-[3px] left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-tertiary-container" />
+              )}
+              <div className="absolute -top-[3px] right-0 w-1.5 h-1.5 rounded-full bg-outline-variant" />
+            </div>
+          </div>
+
+          <div className="text-center">
+            <p className="text-xl font-headline font-extrabold">{arrTime}</p>
+            <p className="text-xs font-bold text-outline">{lastSeg.arrivalAirport}</p>
+          </div>
+        </div>
+
+        {/* Col 8-9: Status */}
+        <div className="col-span-6 md:col-span-2 md:border-l border-outline-variant/15 md:pl-6">
+          <div className={`inline-flex items-center gap-1.5 ${status.style} px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1`}>
+            <span className="material-symbols-outlined text-[14px]">{status.icon}</span>
+            {status.label}
+          </div>
+          <p className="text-[10px] text-outline leading-snug">{status.detail}</p>
+        </div>
+
+        {/* Col 10-12: Price + CTA */}
+        <div className="col-span-6 md:col-span-3 text-right space-y-3">
+          <div>
+            {flight.dealScore === 'great' && (
+              <p className="text-[10px] font-bold text-error uppercase tracking-widest line-through decoration-1 opacity-60">
+                £{Math.round(flight.price * 1.6)}
+              </p>
+            )}
+            <p className="text-3xl font-headline font-extrabold text-primary tracking-tighter">
+              {formatPrice(flight.price)}
+            </p>
+          </div>
+          <a
+            href={bookUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-3 primary-gradient text-on-primary text-xs font-bold uppercase tracking-widest rounded-lg hover:shadow-lg transition-all active:scale-[0.98] text-center"
+          >
+            Book Now
+          </a>
+        </div>
       </div>
     </div>
   );

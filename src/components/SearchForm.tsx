@@ -2,11 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Calendar, Users, ArrowLeftRight, X, ChevronDown } from 'lucide-react';
 import { searchAirports, LONDON_AIRPORTS } from '@/lib/airports';
 import type { Airport, CabinClass } from '@/types/flights';
 
-const LONDON_OPTION = {
+const LONDON_OPTION: Airport = {
   code: 'LON',
   name: 'All London Airports',
   city: 'London',
@@ -14,147 +13,135 @@ const LONDON_OPTION = {
   flag: '🇬🇧',
 };
 
-const CABIN_OPTIONS: { value: CabinClass; label: string }[] = [
-  { value: 'ECONOMY', label: 'Economy' },
-  { value: 'PREMIUM_ECONOMY', label: 'Premium Economy' },
-  { value: 'BUSINESS', label: 'Business' },
-  { value: 'FIRST', label: 'First' },
-];
-
 function today(): string {
   return new Date().toISOString().split('T')[0];
 }
-
 function daysFromNow(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() + n);
   return d.toISOString().split('T')[0];
 }
 
-interface AirportPickerProps {
+interface AirportDropdownProps {
   value: Airport | null;
   placeholder: string;
-  onChange: (airport: Airport) => void;
+  icon: string;
+  onChange: (a: Airport) => void;
   excludeCode?: string;
-  allowAnyDest?: boolean;
-  defaultOptions?: Airport[];
+  allowAny?: boolean;
+  readOnly?: boolean;
 }
 
-function AirportPicker({
+function AirportDropdown({
   value,
   placeholder,
+  icon,
   onChange,
   excludeCode,
-  allowAnyDest = false,
-  defaultOptions,
-}: AirportPickerProps) {
-  const [query, setQuery] = useState('');
+  allowAny = false,
+  readOnly = false,
+}: AirportDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
-  const results = query.length > 0 ? searchAirports(query).filter((a) => a.code !== excludeCode) : (defaultOptions ?? []);
+  const results = query.length > 0
+    ? searchAirports(query).filter((a) => a.code !== excludeCode)
+    : [];
 
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
+    const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
+
+  function displayValue(): string {
+    if (!value) return '';
+    if (value.code === 'LON') return 'London (LHR, LGW, STN)';
+    if (value.code === 'ANY') return '';
+    return `${value.city} (${value.code})`;
+  }
 
   return (
     <div ref={ref} className="relative">
-      <div
-        className="search-input rounded-xl px-4 py-3 flex items-center gap-2 cursor-text"
-        onClick={() => setOpen(true)}
-      >
-        <MapPin className="w-4 h-4 text-slate-500 flex-shrink-0" />
-        {open ? (
-          <input
-            autoFocus
-            className="flex-1 bg-transparent outline-none text-slate-100 placeholder-slate-500 text-sm"
-            placeholder={placeholder}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        ) : (
-          <span className={`flex-1 text-sm truncate ${value ? 'text-slate-100' : 'text-slate-500'}`}>
-            {value ? (
-              <span className="flex items-center gap-2">
-                <span>{value.flag}</span>
-                <span>{value.city === 'London' && value.code !== 'LON' ? `${value.name}` : value.city === 'London' ? 'All London Airports' : value.city}</span>
-                <span className="text-slate-500 text-xs">({value.code})</span>
-              </span>
-            ) : placeholder}
-          </span>
-        )}
-        {value && !open && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onChange(LONDON_OPTION as Airport); }}
-            className="text-slate-500 hover:text-slate-300 p-0.5"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
+      <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary pointer-events-none">
+        {icon}
+      </span>
+      <input
+        className="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-none rounded-lg font-medium focus:ring-2 focus:ring-primary-fixed transition-all text-sm text-on-surface outline-none"
+        placeholder={placeholder}
+        readOnly={readOnly}
+        value={open ? query : displayValue()}
+        onFocus={() => { if (!readOnly) setOpen(true); }}
+        onChange={(e) => { setQuery(e.target.value); }}
+      />
 
-      {open && (
-        <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0a1628] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-          {/* London group */}
+      {open && !readOnly && (
+        <div className="absolute z-50 top-full mt-1 left-0 right-0 min-w-[280px] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl overflow-hidden">
+          {/* London airports group */}
           {(query === '' || 'london'.includes(query.toLowerCase())) && (
-            <div>
-              <div className="px-3 pt-2 pb-1 text-xs text-slate-500 font-medium uppercase tracking-wide">
+            <>
+              <div className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-outline">
                 London Airports
               </div>
               {[LONDON_OPTION, ...Object.values(LONDON_AIRPORTS)].map((apt) => (
                 <button
                   key={apt.code}
-                  className="w-full text-left px-4 py-2.5 hover:bg-white/5 flex items-center gap-3 transition-colors"
-                  onClick={() => { onChange(apt as Airport); setOpen(false); setQuery(''); }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-surface-container flex items-center gap-3 transition-colors"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange(apt as Airport);
+                    setOpen(false);
+                    setQuery('');
+                  }}
                 >
-                  <span className="text-lg">{apt.flag}</span>
+                  <span className="text-base">{apt.flag}</span>
                   <div>
-                    <p className="text-sm text-slate-200">{apt.name}</p>
-                    <p className="text-xs text-slate-500">{apt.code} &middot; United Kingdom</p>
+                    <p className="text-sm font-medium text-on-surface">{apt.name}</p>
+                    <p className="text-xs text-outline">{apt.code}</p>
                   </div>
                 </button>
               ))}
-              <div className="border-t border-white/5 my-1" />
-            </div>
+              <div className="border-t border-outline-variant/30 my-1" />
+            </>
           )}
 
           {/* Search results */}
-          {results.length > 0 && (
-            <div>
-              {query && <div className="px-3 pt-2 pb-1 text-xs text-slate-500 font-medium uppercase tracking-wide">Results</div>}
-              {results.map((apt) => (
-                <button
-                  key={apt.code}
-                  className="w-full text-left px-4 py-2.5 hover:bg-white/5 flex items-center gap-3 transition-colors"
-                  onClick={() => { onChange(apt); setOpen(false); setQuery(''); }}
-                >
-                  <span className="text-lg">{apt.flag}</span>
-                  <div>
-                    <p className="text-sm text-slate-200">{apt.city}</p>
-                    <p className="text-xs text-slate-500">{apt.code} &middot; {apt.country}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {allowAnyDest && query === '' && (
+          {results.map((apt) => (
             <button
-              className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 border-t border-white/5"
-              onClick={() => {
-                onChange({ code: 'ANY', name: 'Anywhere', city: 'Anywhere', country: '', flag: '🌍' });
-                setOpen(false); setQuery('');
+              key={apt.code}
+              className="w-full text-left px-4 py-2.5 hover:bg-surface-container flex items-center gap-3 transition-colors"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(apt);
+                setOpen(false);
+                setQuery('');
               }}
             >
-              <span className="text-lg">🌍</span>
+              <span className="text-base">{apt.flag}</span>
               <div>
-                <p className="text-sm text-slate-200">Anywhere</p>
-                <p className="text-xs text-slate-500">Show me the cheapest destinations</p>
+                <p className="text-sm font-medium text-on-surface">{apt.city}</p>
+                <p className="text-xs text-outline">{apt.code} · {apt.country}</p>
+              </div>
+            </button>
+          ))}
+
+          {allowAny && query === '' && (
+            <button
+              className="w-full text-left px-4 py-3 hover:bg-surface-container flex items-center gap-3 border-t border-outline-variant/30"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange({ code: 'ANY', name: 'Anywhere', city: 'Anywhere', country: '', flag: '🌍' });
+                setOpen(false);
+                setQuery('');
+              }}
+            >
+              <span className="text-base">🌍</span>
+              <div>
+                <p className="text-sm font-medium text-on-surface">Anywhere</p>
+                <p className="text-xs text-outline">Show me the cheapest destinations</p>
               </div>
             </button>
           )}
@@ -166,24 +153,14 @@ function AirportPicker({
 
 export default function SearchForm({ minimal = false }: { minimal?: boolean }) {
   const router = useRouter();
-  const [origin, setOrigin] = useState<Airport>(LONDON_OPTION as Airport);
+  const [origin, setOrigin] = useState<Airport>(LONDON_OPTION);
   const [destination, setDestination] = useState<Airport | null>(null);
   const [departDate, setDepartDate] = useState(daysFromNow(7));
   const [returnDate, setReturnDate] = useState(daysFromNow(14));
-  const [isReturn, setIsReturn] = useState(true);
   const [adults, setAdults] = useState(1);
-  const [cabin, setCabin] = useState<CabinClass>('ECONOMY');
-  const [showCabin, setShowCabin] = useState(false);
+  const [cabin] = useState<CabinClass>('ECONOMY');
 
-  function handleSwap() {
-    if (destination) {
-      const prev = origin;
-      setOrigin(destination);
-      setDestination(prev);
-    }
-  }
-
-  function handleSearch(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams({
       origin: origin.code,
@@ -191,46 +168,29 @@ export default function SearchForm({ minimal = false }: { minimal?: boolean }) {
       destination: destination?.code ?? 'ANY',
       destinationCity: destination?.city ?? 'Anywhere',
       departDate,
+      returnDate,
       adults: String(adults),
       cabin,
-      ...(isReturn && returnDate ? { returnDate } : {}),
     });
     router.push(`/search?${params}`);
   }
 
   if (minimal) {
     return (
-      <form onSubmit={handleSearch} className="flex flex-wrap gap-2 items-center">
-        <div className="flex-1 min-w-[180px]">
-          <AirportPicker
-            value={origin}
-            placeholder="From"
-            onChange={setOrigin}
-            defaultOptions={[]}
-          />
+      <form onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-center bg-surface-container-low p-4 rounded-xl">
+        <div className="flex-1 min-w-[160px]">
+          <AirportDropdown value={origin} placeholder="From" icon="flight_takeoff" onChange={setOrigin} excludeCode={destination?.code} />
         </div>
-        <div className="flex-1 min-w-[180px]">
-          <AirportPicker
-            value={destination}
-            placeholder="To (anywhere)"
-            onChange={setDestination}
-            excludeCode={origin.code}
-            allowAnyDest
-            defaultOptions={[]}
-          />
+        <div className="flex-1 min-w-[160px]">
+          <AirportDropdown value={destination} placeholder="To — anywhere" icon="location_on" onChange={setDestination} excludeCode={origin.code} allowAny />
         </div>
-        <input
-          type="date"
-          value={departDate}
-          min={today()}
-          onChange={(e) => setDepartDate(e.target.value)}
-          className="search-input rounded-xl px-3 py-3 text-sm"
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2"
-        >
-          <Search className="w-4 h-4" />
+        <div className="relative min-w-[150px]">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline pointer-events-none text-sm">calendar_today</span>
+          <input type="date" value={departDate} min={today()} onChange={(e) => setDepartDate(e.target.value)}
+            className="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-none rounded-lg font-medium focus:ring-2 focus:ring-primary-fixed transition-all text-sm outline-none" />
+        </div>
+        <button type="submit" className="primary-gradient text-on-primary font-bold px-6 py-4 rounded-lg flex items-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all text-sm">
+          <span className="material-symbols-outlined text-[18px]">search</span>
           Search
         </button>
       </form>
@@ -238,141 +198,84 @@ export default function SearchForm({ minimal = false }: { minimal?: boolean }) {
   }
 
   return (
-    <form
-      onSubmit={handleSearch}
-      className="glass-card rounded-2xl p-4 sm:p-6 space-y-4"
-    >
-      {/* Trip type toggle */}
-      <div className="flex items-center gap-4">
-        <div className="flex bg-white/5 rounded-lg p-0.5 text-sm">
-          <button
-            type="button"
-            onClick={() => setIsReturn(false)}
-            className={`px-3 py-1.5 rounded-md transition-all font-medium ${!isReturn ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            One way
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsReturn(true)}
-            className={`px-3 py-1.5 rounded-md transition-all font-medium ${isReturn ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            Return
-          </button>
+    <form onSubmit={handleSubmit} className="bg-surface-container-low p-8 rounded-xl">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+        {/* Origin */}
+        <div className="lg:col-span-3 space-y-2">
+          <label className="font-label text-xs uppercase tracking-widest text-outline ml-1">Origin</label>
+          <AirportDropdown
+            value={origin}
+            placeholder="London (LHR, LGW, STN)"
+            icon="flight_takeoff"
+            onChange={setOrigin}
+            excludeCode={destination?.code}
+          />
         </div>
 
-        {/* Cabin class */}
-        <div className="relative ml-auto">
-          <button
-            type="button"
-            onClick={() => setShowCabin(!showCabin)}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            {CABIN_OPTIONS.find((c) => c.value === cabin)?.label}
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-          {showCabin && (
-            <div className="absolute right-0 top-full mt-1 bg-[#0a1628] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 min-w-[160px]">
-              {CABIN_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${cabin === opt.value ? 'text-blue-400' : 'text-slate-300'}`}
-                  onClick={() => { setCabin(opt.value); setShowCabin(false); }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+        {/* Destination */}
+        <div className="lg:col-span-3 space-y-2">
+          <label className="font-label text-xs uppercase tracking-widest text-outline ml-1">Destination</label>
+          <AirportDropdown
+            value={destination}
+            placeholder="Anywhere"
+            icon="location_on"
+            onChange={setDestination}
+            excludeCode={origin.code}
+            allowAny
+          />
+        </div>
+
+        {/* Dates */}
+        <div className="lg:col-span-4 space-y-2">
+          <label className="font-label text-xs uppercase tracking-widest text-outline ml-1">Dates</label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline pointer-events-none">calendar_today</span>
+              <input
+                type="date"
+                value={departDate}
+                min={today()}
+                onChange={(e) => setDepartDate(e.target.value)}
+                placeholder="Departure"
+                className="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-none rounded-lg font-medium focus:ring-2 focus:ring-primary-fixed transition-all text-sm outline-none text-on-surface"
+              />
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Origin / Destination row */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto,1fr] gap-2 items-center">
-        <AirportPicker
-          value={origin}
-          placeholder="From — London"
-          onChange={setOrigin}
-          excludeCode={destination?.code}
-          defaultOptions={[]}
-        />
-
-        <button
-          type="button"
-          onClick={handleSwap}
-          disabled={!destination}
-          className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/8 transition-all disabled:opacity-30 mx-auto"
-        >
-          <ArrowLeftRight className="w-4 h-4 text-slate-400" />
-        </button>
-
-        <AirportPicker
-          value={destination}
-          placeholder="To — anywhere"
-          onChange={setDestination}
-          excludeCode={origin.code}
-          allowAnyDest
-          defaultOptions={[]}
-        />
-      </div>
-
-      {/* Dates + passengers */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="space-y-1">
-          <label className="text-xs text-slate-500 block px-1">Depart</label>
-          <input
-            type="date"
-            value={departDate}
-            min={today()}
-            onChange={(e) => setDepartDate(e.target.value)}
-            className="search-input rounded-xl px-3 py-2.5 text-sm w-full"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs text-slate-500 block px-1">Return</label>
-          <input
-            type="date"
-            value={returnDate}
-            min={departDate}
-            disabled={!isReturn}
-            onChange={(e) => setReturnDate(e.target.value)}
-            className="search-input rounded-xl px-3 py-2.5 text-sm w-full disabled:opacity-30"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs text-slate-500 block px-1">Passengers</label>
-          <div className="search-input rounded-xl px-3 py-2.5 flex items-center gap-2">
-            <Users className="w-4 h-4 text-slate-500" />
-            <button
-              type="button"
-              onClick={() => setAdults(Math.max(1, adults - 1))}
-              className="text-slate-400 hover:text-white w-5 text-center"
-            >
-              −
-            </button>
-            <span className="flex-1 text-center text-sm font-medium">{adults}</span>
-            <button
-              type="button"
-              onClick={() => setAdults(Math.min(9, adults + 1))}
-              className="text-slate-400 hover:text-white w-5 text-center"
-            >
-              +
-            </button>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline pointer-events-none">event_repeat</span>
+              <input
+                type="date"
+                value={returnDate}
+                min={departDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+                placeholder="Return"
+                className="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-none rounded-lg font-medium focus:ring-2 focus:ring-primary-fixed transition-all text-sm outline-none text-on-surface"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex items-end">
+        {/* Passengers hidden for cleanliness — defaults to 1 */}
+        <div className="lg:col-span-2">
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+            className="w-full py-4 primary-gradient text-on-primary font-bold rounded-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
           >
-            <Search className="w-4 h-4" />
-            Search Flights
+            <span className="material-symbols-outlined">search</span>
+            Find Deals
           </button>
+        </div>
+      </div>
+
+      {/* Passenger row */}
+      <div className="mt-4 flex items-center gap-4 text-sm text-outline">
+        <span className="material-symbols-outlined text-[18px]">group</span>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setAdults(Math.max(1, adults - 1))}
+            className="w-6 h-6 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container transition-colors text-on-surface">−</button>
+          <span className="font-medium text-on-surface w-4 text-center">{adults}</span>
+          <button type="button" onClick={() => setAdults(Math.min(9, adults + 1))}
+            className="w-6 h-6 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container transition-colors text-on-surface">+</button>
+          <span className="text-on-surface-variant">passenger{adults !== 1 ? 's' : ''} · Economy</span>
         </div>
       </div>
     </form>
