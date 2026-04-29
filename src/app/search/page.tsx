@@ -22,7 +22,7 @@ function SearchContent() {
   const adults          = parseInt(params.get('adults') ?? '1', 10);
   const cabin           = params.get('cabin')           ?? 'ECONOMY';
 
-  const hasValidSearch = !!(origin && destination && departDate && destination !== 'ANY');
+  const hasValidSearch = !!(origin && destination && departDate);
 
   return (
     <main className="flex-grow max-w-[1600px] mx-auto w-full px-6 md:px-10 py-8 grid grid-cols-12 gap-8">

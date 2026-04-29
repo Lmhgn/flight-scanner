@@ -18,11 +18,16 @@ const AIRLINES = [
 
 const BASE_PRICES = [89, 115, 134, 158, 167, 189, 210, 239];
 
+// Destinations shown when user searches "Anywhere"
+const ANY_DESTINATIONS = ['BCN', 'AMS', 'LIS', 'PRG', 'MAD', 'FCO', 'ATH', 'BUD'];
+
 export function searchFlightsClient(params: SearchParams): Flight[] {
+  const isAny = params.destination === 'ANY' || !params.destination;
   const sourceLinks = buildAllSourceLinks(params);
 
   return BASE_PRICES.map((price, i): Flight => {
     const airline = AIRLINES[i];
+    const dest = isAny ? ANY_DESTINATIONS[i % ANY_DESTINATIONS.length] : params.destination;
     const depHour = 6 + i * 2;
     const durationH = 1 + Math.floor(i * 0.8);
     const durationM = (i * 20) % 60;
@@ -33,7 +38,7 @@ export function searchFlightsClient(params: SearchParams): Flight[] {
       outbound: [
         {
           departureAirport: params.origin === 'LON' ? 'LHR' : params.origin,
-          arrivalAirport: params.destination,
+          arrivalAirport: dest,
           departureTime: `${params.departureDate}T${String(depHour).padStart(2, '0')}:00:00`,
           arrivalTime: `${params.departureDate}T${String(arrHour).padStart(2, '0')}:${String(durationM).padStart(2, '0')}:00`,
           airline: airline.code,

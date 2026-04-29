@@ -64,7 +64,9 @@ export default function FlightResults({ searchParams, filters = DEFAULT_FILTERS 
     return true;
   });
 
-  const { originCity = searchParams.origin, destinationCity = searchParams.destination } = searchParams;
+  const isAny = searchParams.destination === 'ANY' || !searchParams.destination;
+  const { originCity = searchParams.origin } = searchParams;
+  const destinationCity = isAny ? 'Everywhere' : (searchParams.destinationCity ?? searchParams.destination);
 
   if (loading) {
     return (
