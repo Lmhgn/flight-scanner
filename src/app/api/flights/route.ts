@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchFlights } from '@/lib/amadeus';
+import { searchFlightsApify } from '@/lib/apify';
 import type { CabinClass } from '@/types/flights';
 
 export async function GET(req: NextRequest) {
@@ -19,13 +19,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  if (destination === 'ANY') {
-    return NextResponse.json({ flights: [] });
-  }
-
   try {
-    const flights = await searchFlights({ origin, destination, departureDate, returnDate, adults, cabinClass });
-    return NextResponse.json({ flights }, { headers: { 'Cache-Control': 'public, s-maxage=300' } });
+    const flights = await searchFlightsApify({ origin, destination, departureDate, returnDate, adults, cabinClass });
+    return NextResponse.json({ flights }, { headers: { 'Cache-Control': 'public, s-maxage=120' } });
   } catch (err) {
     console.error('Flight search error:', err);
     return NextResponse.json({ error: 'Search failed', flights: [] }, { status: 500 });

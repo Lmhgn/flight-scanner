@@ -30,20 +30,37 @@ export default function FlightResults({ searchParams, filters = DEFAULT_FILTERS 
 
   useEffect(() => {
     setLoading(true);
-    // Simulate a brief scan delay for UX
-    const timer = setTimeout(() => {
-      const results = searchFlightsClient({
-        origin: searchParams.origin,
-        destination: searchParams.destination,
-        departureDate: searchParams.departDate,
-        returnDate: searchParams.returnDate,
-        adults: searchParams.adults,
-        cabinClass: searchParams.cabin as CabinClass,
+    const params = {
+      origin: searchParams.origin,
+      destination: searchParams.destination,
+      departureDate: searchParams.departDate,
+      returnDate: searchParams.returnDate,
+      adults: searchParams.adults,
+      cabinClass: searchParams.cabin as CabinClass,
+    };
+
+    const controller = new AbortController();
+
+    const qs = new URLSearchParams({
+      origin: params.origin,
+      destination: params.destination,
+      departureDate: params.departureDate ?? '',
+      ...(params.returnDate && { returnDate: params.returnDate }),
+      adults: String(params.adults),
+      cabinClass: params.cabinClass,
+    });
+
+    fetch(`/api/flights?${qs}`, { signal: controller.signal })
+      .then((res) => { if (!res.ok) throw new Error('API unavailable'); return res.json(); })
+      .then((data) => { setFlights(data.flights ?? []); setLoading(false); })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        // API unavailable (e.g. static export) — fall back to mock
+        setFlights(searchFlightsClient(params));
+        setLoading(false);
       });
-      setFlights(results);
-      setLoading(false);
-    }, 1400);
-    return () => clearTimeout(timer);
+
+    return () => controller.abort();
   }, [searchParams.origin, searchParams.destination, searchParams.departDate, searchParams.returnDate, searchParams.adults, searchParams.cabin]);
 
   const sorted = [...flights].sort((a, b) => {
