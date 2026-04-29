@@ -65,8 +65,10 @@ export default function FlightCard({ flight }: Props) {
   const primarySrc = flight.primarySource ?? 'google_flights';
   const badge = SOURCE_BADGE[primarySrc] ?? SOURCE_BADGE.default;
   const status = DEAL_STATUS[flight.dealScore];
+  const srcMeta = SOURCE_META[primarySrc];
 
-  const bookUrl = flight.sourceLinks.find((l) => l.source === 'skyscanner')?.url
+  // Link to the source that found this result, not always Skyscanner
+  const bookUrl = flight.sourceLinks.find((l) => l.source === primarySrc)?.url
     ?? flight.sourceLinks[0]?.url
     ?? '#';
 
@@ -140,14 +142,10 @@ export default function FlightCard({ flight }: Props) {
         {/* Col 10-12: Price + CTA */}
         <div className="col-span-6 md:col-span-3 text-right space-y-3">
           <div>
-            {flight.dealScore === 'great' && (
-              <p className="text-[10px] font-bold text-error uppercase tracking-widest line-through decoration-1 opacity-60">
-                £{Math.round(flight.price * 1.6)}
-              </p>
-            )}
             <p className="text-3xl font-headline font-extrabold text-primary tracking-tighter">
               {formatPrice(flight.price)}
             </p>
+            <p className="text-[10px] text-outline mt-0.5">estimated · verify on site</p>
           </div>
           <a
             href={bookUrl}
@@ -155,14 +153,14 @@ export default function FlightCard({ flight }: Props) {
             rel="noopener noreferrer"
             className="block w-full py-3 primary-gradient text-on-primary text-xs font-bold uppercase tracking-widest rounded-lg hover:shadow-lg transition-all active:scale-[0.98] text-center"
           >
-            Book Now
+            Search on {srcMeta.shortLabel}
           </a>
         </div>
       </div>
 
       {/* Price comparison bar */}
       <div className="mt-5 pt-4 border-t border-outline-variant/15">
-        <p className="text-[9px] font-bold uppercase tracking-widest text-outline mb-2">Compare across sources</p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-outline mb-2">Search on another source <span className="font-normal normal-case tracking-normal">(prices estimated)</span></p>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(SOURCE_META) as FlightSource[]).map((src) => {
             const meta = SOURCE_META[src];

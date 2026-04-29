@@ -210,7 +210,10 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
             {/* Source price comparison */}
             <section>
-              <h2 className="font-headline text-2xl font-bold mb-6">Compare Prices Across Sources</h2>
+              <div className="flex items-baseline gap-3 mb-6">
+                <h2 className="font-headline text-2xl font-bold">Search Across Sources</h2>
+                <span className="text-sm text-outline">prices are estimated — verify before booking</span>
+              </div>
               <div className="space-y-3">
                 {sources.map((src) => {
                   const meta = SOURCE_META[src];
@@ -267,7 +270,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                               : 'border border-outline-variant hover:border-primary hover:text-primary'
                           }`}
                         >
-                          Book
+                          Search
                         </a>
                       </div>
                     </div>
