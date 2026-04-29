@@ -16,17 +16,7 @@ const DEAL_TYPE_BADGE: Record<string, { icon: string; label: string }> = {
 };
 
 function buildDealUrl(deal: Deal) {
-  const params = new URLSearchParams({
-    origin: deal.departureAirport,
-    originCity: 'London',
-    destination: deal.destination.code,
-    destinationCity: deal.destination.city,
-    departDate: deal.departureDate,
-    returnDate: deal.returnDate ?? '',
-    adults: '1',
-    cabin: 'ECONOMY',
-  });
-  return `/search?${params}`;
+  return `/deals/${deal.id}`;
 }
 
 // Tall portrait card (current month — 3-col grid)

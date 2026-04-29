@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Flight, CabinClass } from '@/types/flights';
+import type { Flight, CabinClass, FlightSource } from '@/types/flights';
 import FlightCard from './FlightCard';
 import { searchFlightsClient } from '@/lib/clientSearch';
+import type { Filters } from './SidebarFilters';
+import { DEFAULT_FILTERS } from './SidebarFilters';
 
 interface Props {
   searchParams: {
@@ -16,11 +18,12 @@ interface Props {
     originCity?: string;
     destinationCity?: string;
   };
+  filters?: Filters;
 }
 
 type SortKey = 'recommended' | 'price' | 'duration';
 
-export default function FlightResults({ searchParams }: Props) {
+export default function FlightResults({ searchParams, filters = DEFAULT_FILTERS }: Props) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortKey>('recommended');
@@ -48,6 +51,17 @@ export default function FlightResults({ searchParams }: Props) {
     if (sortBy === 'duration') return a.stops - b.stops;
     const scoreOrder = { great: 0, good: 1, normal: 2 };
     return scoreOrder[a.dealScore] - scoreOrder[b.dealScore] || a.price - b.price;
+  });
+
+  const filtered = sorted.filter((f) => {
+    if (filters.maxPrice < 2000 && f.price > filters.maxPrice) return false;
+    if (filters.stops !== null) {
+      if (filters.stops === 2 && f.stops < 2) return false;
+      if (filters.stops < 2 && f.stops !== filters.stops) return false;
+    }
+    if (!filters.sources.includes(f.primarySource as FlightSource)) return false;
+    if (!filters.airlines.includes(f.airline)) return false;
+    return true;
   });
 
   const { originCity = searchParams.origin, destinationCity = searchParams.destination } = searchParams;
@@ -102,7 +116,7 @@ export default function FlightResults({ searchParams }: Props) {
             {originCity} → {destinationCity}
           </h1>
           <p className="text-sm text-outline mt-1 font-medium">
-            {flights.length} Hidden Deals Found
+            {filtered.length} of {flights.length} results
             {searchParams.departDate ? ` · ${searchParams.departDate}` : ''}
             {searchParams.returnDate ? ` – ${searchParams.returnDate}` : ''}
           </p>
@@ -123,7 +137,13 @@ export default function FlightResults({ searchParams }: Props) {
 
       {/* Result cards */}
       <div className="space-y-4">
-        {sorted.map((flight) => (
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center py-20 text-center gap-3">
+            <span className="material-symbols-outlined text-outline/40 text-5xl">filter_list_off</span>
+            <p className="font-headline font-bold text-lg text-on-surface-variant">No results match your filters</p>
+            <p className="text-sm text-outline">Try widening the price range or selecting more airlines and sources.</p>
+          </div>
+        ) : filtered.map((flight) => (
           <FlightCard key={flight.id} flight={flight} />
         ))}
       </div>

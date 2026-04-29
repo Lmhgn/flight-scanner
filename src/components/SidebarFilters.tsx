@@ -1,58 +1,94 @@
 'use client';
 
 import { useState } from 'react';
+import type { FlightSource } from '@/types/flights';
+import { SOURCE_META } from '@/lib/deepLinks';
 
-interface Filters {
-  sources: string[];
+export interface Filters {
+  sources: FlightSource[];
   maxPrice: number;
   stops: number | null;
   airlines: string[];
 }
 
-const ALL_SOURCES = ['ITA Matrix', 'Skiplagged', 'Direct Booking', 'Google Flights', 'Skyscanner'];
-const ALL_AIRLINES = ['British Airways', 'easyJet', 'Ryanair', 'Wizz Air', 'Jet2', 'Norwegian', 'KLM', 'Emirates', 'Virgin Atlantic'];
+const ALL_SOURCES = Object.keys(SOURCE_META) as FlightSource[];
+
+export const ALL_AIRLINES = [
+  'British Airways', 'easyJet', 'Ryanair', 'Wizz Air',
+  'Jet2', 'Norwegian', 'KLM', 'Emirates', 'Virgin Atlantic',
+];
+
+export const DEFAULT_FILTERS: Filters = {
+  sources: [...ALL_SOURCES],
+  maxPrice: 2000,
+  stops: null,
+  airlines: [...ALL_AIRLINES],
+};
 
 interface Props {
   onChange?: (filters: Filters) => void;
 }
 
 export default function SidebarFilters({ onChange }: Props) {
-  const [sources, setSources] = useState<string[]>(['ITA Matrix', 'Skiplagged']);
-  const [maxPrice, setMaxPrice] = useState(1200);
+  const [sources, setSources] = useState<FlightSource[]>([...ALL_SOURCES]);
+  const [maxPrice, setMaxPrice] = useState(2000);
   const [stops, setStops] = useState<number | null>(null);
-  const [airlines, setAirlines] = useState<string[]>(['British Airways', 'easyJet']);
+  const [airlines, setAirlines] = useState<string[]>([...ALL_AIRLINES]);
 
-  function toggleSource(s: string) {
+  function emit(overrides: Partial<Filters>) {
+    onChange?.({ sources, maxPrice, stops, airlines, ...overrides });
+  }
+
+  function toggleSource(s: FlightSource) {
     const next = sources.includes(s) ? sources.filter((x) => x !== s) : [...sources, s];
     setSources(next);
-    onChange?.({ sources: next, maxPrice, stops, airlines });
+    emit({ sources: next });
   }
 
   function toggleAirline(a: string) {
     const next = airlines.includes(a) ? airlines.filter((x) => x !== a) : [...airlines, a];
     setAirlines(next);
-    onChange?.({ sources, maxPrice, stops, airlines: next });
+    emit({ airlines: next });
   }
 
   function setStopsFilter(s: number | null) {
     setStops(s);
-    onChange?.({ sources, maxPrice, stops: s, airlines });
+    emit({ stops: s });
+  }
+
+  function handlePriceChange(v: number) {
+    setMaxPrice(v);
+    emit({ maxPrice: v });
   }
 
   function reset() {
-    setSources(['ITA Matrix', 'Skiplagged']);
-    setMaxPrice(1200);
+    setSources([...ALL_SOURCES]);
+    setMaxPrice(2000);
     setStops(null);
-    setAirlines(['British Airways', 'easyJet']);
-    onChange?.({ sources: ['ITA Matrix', 'Skiplagged'], maxPrice: 1200, stops: null, airlines: ['British Airways', 'easyJet'] });
+    setAirlines([...ALL_AIRLINES]);
+    onChange?.(DEFAULT_FILTERS);
   }
+
+  const activeFilterCount = [
+    sources.length < ALL_SOURCES.length,
+    maxPrice < 2000,
+    stops !== null,
+    airlines.length < ALL_AIRLINES.length,
+  ].filter(Boolean).length;
 
   return (
     <aside className="col-span-3 space-y-8">
       <div className="bg-surface-container-low p-6 rounded-lg space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="font-headline font-bold text-lg text-primary">Filters</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-headline font-bold text-lg text-primary">Filters</h3>
+            {activeFilterCount > 0 && (
+              <span className="bg-primary text-on-primary text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </div>
           <button onClick={reset} className="text-xs font-semibold text-secondary uppercase tracking-wider hover:underline">
             Reset All
           </button>
@@ -60,7 +96,7 @@ export default function SidebarFilters({ onChange }: Props) {
 
         {/* Deal Source */}
         <div className="space-y-3">
-          <span className="text-xs font-bold uppercase tracking-widest text-outline">Deal Source</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-outline">Source</span>
           <div className="space-y-2">
             {ALL_SOURCES.map((s) => (
               <label key={s} className="flex items-center gap-3 cursor-pointer group">
@@ -68,9 +104,11 @@ export default function SidebarFilters({ onChange }: Props) {
                   type="checkbox"
                   checked={sources.includes(s)}
                   onChange={() => toggleSource(s)}
-                  className="rounded border-outline-variant"
+                  className="rounded border-outline-variant accent-primary"
                 />
-                <span className="text-sm font-medium group-hover:text-primary transition-colors">{s}</span>
+                <span className="text-sm font-medium group-hover:text-primary transition-colors">
+                  {SOURCE_META[s].label}
+                </span>
               </label>
             ))}
           </div>
@@ -78,23 +116,21 @@ export default function SidebarFilters({ onChange }: Props) {
 
         {/* Price Range */}
         <div className="space-y-4">
-          <span className="text-xs font-bold uppercase tracking-widest text-outline">Price Range</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-outline">Max Price</span>
           <input
             type="range"
             min={0}
             max={2000}
-            step={50}
+            step={25}
             value={maxPrice}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              setMaxPrice(v);
-              onChange?.({ sources, maxPrice: v, stops, airlines });
-            }}
-            className="w-full h-1.5 bg-surface-container-highest rounded-full appearance-none"
+            onChange={(e) => handlePriceChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-surface-container-highest rounded-full appearance-none accent-primary"
           />
           <div className="flex justify-between text-xs font-medium text-on-surface-variant">
             <span>£0</span>
-            <span className="text-primary font-bold">£{maxPrice === 2000 ? '2000+' : maxPrice}</span>
+            <span className={`font-bold ${maxPrice < 2000 ? 'text-primary' : 'text-outline'}`}>
+              {maxPrice < 2000 ? `£${maxPrice}` : 'Any'}
+            </span>
           </div>
         </div>
 
@@ -104,7 +140,7 @@ export default function SidebarFilters({ onChange }: Props) {
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: 'Non-stop', value: 0 },
-              { label: '1 Stop', value: 1 },
+              { label: '1 Stop',   value: 1 },
               { label: '2+ Stops', value: 2 },
             ].map(({ label, value }) => (
               <button
@@ -124,7 +160,17 @@ export default function SidebarFilters({ onChange }: Props) {
 
         {/* Airlines */}
         <div className="space-y-3">
-          <span className="text-xs font-bold uppercase tracking-widest text-outline">Airlines</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-widest text-outline">Airlines</span>
+            {airlines.length < ALL_AIRLINES.length && (
+              <button
+                onClick={() => { setAirlines([...ALL_AIRLINES]); emit({ airlines: [...ALL_AIRLINES] }); }}
+                className="text-[10px] text-secondary hover:underline font-medium"
+              >
+                Select all
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
             {ALL_AIRLINES.map((a) => (
               <label key={a} className="flex items-center gap-3 cursor-pointer group">
@@ -132,7 +178,7 @@ export default function SidebarFilters({ onChange }: Props) {
                   type="checkbox"
                   checked={airlines.includes(a)}
                   onChange={() => toggleAirline(a)}
-                  className="rounded border-outline-variant"
+                  className="rounded border-outline-variant accent-primary"
                 />
                 <span className="text-sm font-medium group-hover:text-primary transition-colors">{a}</span>
               </label>

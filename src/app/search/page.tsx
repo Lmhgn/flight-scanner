@@ -1,15 +1,17 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import SearchForm from '@/components/SearchForm';
 import FlightResults from '@/components/FlightResults';
-import SidebarFilters from '@/components/SidebarFilters';
+import SidebarFilters, { DEFAULT_FILTERS } from '@/components/SidebarFilters';
+import type { Filters } from '@/components/SidebarFilters';
 import Link from 'next/link';
 
 function SearchContent() {
   const params = useSearchParams();
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
 
   const origin          = params.get('origin')          ?? 'LON';
   const originCity      = params.get('originCity')      ?? 'London';
@@ -24,7 +26,7 @@ function SearchContent() {
 
   return (
     <main className="flex-grow max-w-[1600px] mx-auto w-full px-6 md:px-10 py-8 grid grid-cols-12 gap-8">
-      <SidebarFilters />
+      <SidebarFilters onChange={setFilters} />
 
       {!hasValidSearch ? (
         <div className="col-span-9 flex flex-col items-center justify-center py-24 text-center gap-4">
@@ -38,6 +40,7 @@ function SearchContent() {
       ) : (
         <FlightResults
           searchParams={{ origin, destination, departDate, returnDate, adults, cabin, originCity, destinationCity }}
+          filters={filters}
         />
       )}
     </main>
