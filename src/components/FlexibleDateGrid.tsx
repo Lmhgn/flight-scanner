@@ -66,7 +66,7 @@ export default function FlexibleDateGrid({ origin = 'LON', destination = 'ANY', 
           <span className="material-symbols-outlined text-primary">calendar_month</span>
           <h2 className="font-headline text-2xl font-bold">Cheapest Days to Fly</h2>
         </div>
-        <p className="text-xs text-outline hidden sm:block">Prices from London · click any date to search</p>
+        <p className="text-xs text-outline hidden sm:block">Estimated prices from London · click to search</p>
       </div>
 
       <div className="bg-surface-container-low rounded-xl p-5">

@@ -32,11 +32,10 @@ export default function LastMinuteSection({ deals }: Props) {
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-error text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
           <h2 className="font-headline text-2xl font-bold">Leaving This Week</h2>
-          <span className="bg-error-container text-on-error-container px-3 py-1 rounded-full text-xs font-bold font-label animate-pulse">
-            LAST MINUTE
+          <span className="bg-error-container text-on-error-container px-3 py-1 rounded-full text-xs font-bold font-label">
+            THIS WEEK
           </span>
         </div>
-        <p className="text-xs text-outline hidden sm:block">Grab it before it&rsquo;s gone — prices valid for hours, not days</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

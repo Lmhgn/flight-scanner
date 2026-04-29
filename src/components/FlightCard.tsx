@@ -12,31 +12,32 @@ const AIRLINE_NAMES: Record<string, string> = {
 };
 
 const SOURCE_BADGE: Record<string, { label: string; style: string }> = {
-  skiplagged:         { label: 'Hidden City (Skiplagged)',   style: 'glass-badge text-on-secondary-container' },
-  ita_matrix:         { label: 'ITA Matrix Deep Search',     style: 'bg-tertiary-container/10 text-on-tertiary-container' },
-  google_flights:     { label: 'Signature Deal',             style: 'bg-primary/10 text-primary' },
-  jacks_flight_club:  { label: "Jack's Flight Club Pick",    style: 'bg-error-container/60 text-on-error-container' },
-  default:            { label: 'Signature Deal',             style: 'bg-primary/10 text-primary' },
+  skiplagged:         { label: 'via Skiplagged',        style: 'bg-surface-container text-outline' },
+  ita_matrix:         { label: 'via ITA Matrix',        style: 'bg-surface-container text-outline' },
+  google_flights:     { label: 'via Google Flights',    style: 'bg-surface-container text-outline' },
+  jacks_flight_club:  { label: "via Jack's",            style: 'bg-surface-container text-outline' },
+  skyscanner:         { label: 'via Skyscanner',        style: 'bg-surface-container text-outline' },
+  default:            { label: 'via Google Flights',    style: 'bg-surface-container text-outline' },
 };
 
 const DEAL_STATUS: Record<string, { icon: string; label: string; style: string; detail: string }> = {
   great: {
     icon: 'check_circle',
-    label: 'On-Time',
+    label: 'Great deal',
     style: 'bg-secondary-container text-on-secondary-container',
-    detail: 'Verified pricing, frequently operated route',
+    detail: 'Well below average for this route',
   },
   good: {
     icon: 'trending_down',
-    label: '-25% vs Avg',
+    label: 'Good deal',
     style: 'bg-secondary-container text-on-secondary-container',
-    detail: 'Lowest price in the last 30 days',
+    detail: 'Below average for this route',
   },
   normal: {
-    icon: 'report',
-    label: 'Short Connect',
-    style: 'bg-error-container text-on-error-container',
-    detail: 'Allow extra time for connection',
+    icon: 'remove_circle',
+    label: 'Average',
+    style: 'bg-surface-container text-outline',
+    detail: 'Around typical price for this route',
   },
 };
 
@@ -82,9 +83,9 @@ export default function FlightCard({ flight }: Props) {
 
   return (
     <div className="group bg-surface-container-lowest hover:bg-surface-bright transition-all duration-300 rounded-lg p-6 shadow-[0_4px_20px_-10px_rgba(0,52,111,0.05)] relative overflow-hidden">
-      {/* Source badge */}
-      <div className={`absolute top-0 right-0 ${badge.style} px-4 py-1.5 rounded-bl-lg`}>
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{badge.label}</span>
+      {/* Source label */}
+      <div className="absolute top-3 right-3">
+        <span className={`${badge.style} text-[10px] font-medium px-2 py-0.5 rounded`}>{badge.label}</span>
       </div>
 
       <div className="grid grid-cols-12 items-center gap-4 md:gap-8">

@@ -48,7 +48,7 @@ function CurrentMonthSection({ deals, offset }: { deals: Deal[]; offset: number 
     <section>
       <div className="flex items-baseline justify-between mb-8">
         <div className="flex items-center gap-4">
-          <h2 className="font-headline text-3xl font-bold">Impromptu Trips: {month}</h2>
+          <h2 className="font-headline text-3xl font-bold">{month}</h2>
           <span className={`${MONTH_BADGE_STYLES[0]} px-3 py-1 rounded-full text-xs font-bold font-label`}>CURRENT MONTH</span>
         </div>
         <ViewAllLink text={`View all ${month} deals`} href="/search?origin=LON&destination=ANY&departDate=&cabin=ECONOMY&adults=1" />
@@ -70,7 +70,7 @@ function NextMonthSection({ deals, offset }: { deals: Deal[]; offset: number }) 
     <section>
       <div className="flex items-baseline justify-between mb-8">
         <div className="flex items-center gap-4">
-          <h2 className="font-headline text-3xl font-bold">Impromptu Trips: {month}</h2>
+          <h2 className="font-headline text-3xl font-bold">{month}</h2>
           <span className={`${badge} px-3 py-1 rounded-full text-xs font-bold font-label tracking-wide`}>UPCOMING</span>
         </div>
         <ViewAllLink text={`Browse ${month}`} href="/search?origin=LON&destination=ANY&departDate=&cabin=ECONOMY&adults=1" />
@@ -95,7 +95,7 @@ function MonthAfterSection({ deals, offset }: { deals: Deal[]; offset: number })
     <section>
       <div className="flex items-baseline justify-between mb-8">
         <div className="flex items-center gap-4">
-          <h2 className="font-headline text-3xl font-bold">Impromptu Trips: {month}</h2>
+          <h2 className="font-headline text-3xl font-bold">{month}</h2>
           <span className={`${MONTH_BADGE_STYLES[2]} px-3 py-1 rounded-full text-xs font-bold font-label tracking-wide`}>
             {SEASON_MAP[month] ?? 'UPCOMING'}
           </span>

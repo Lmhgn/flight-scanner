@@ -25,9 +25,9 @@ export default function Header() {
   }, []);
 
   const navItems = [
-    { href: '/', label: 'Explore Deals' },
-    { href: '/saved', label: 'Saved Trips', count: savedCount },
-    { href: '/search', label: 'Price Tracker' },
+    { href: '/', label: 'Deals' },
+    { href: '/saved', label: 'Saved', count: savedCount },
+    { href: '/search', label: 'Search' },
   ];
 
   return (
@@ -64,9 +64,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-surface-container rounded-lg transition-all duration-200">
-            <span className="material-symbols-outlined text-outline">notifications</span>
-          </button>
           <Link href="/saved" className="p-2 hover:bg-surface-container rounded-lg transition-all duration-200 relative">
             <span
               className="material-symbols-outlined text-outline"

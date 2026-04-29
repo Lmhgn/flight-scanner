@@ -94,14 +94,9 @@ export default function FlightResults({ searchParams, filters = DEFAULT_FILTERS 
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-center gap-3 py-4">
-          <div className="flex gap-2">
-            {['Google Flights', 'Skyscanner', 'ITA Matrix', 'Skiplagged', "Jack's"].map((s, i) => (
-              <span key={s} className="text-xs px-2 py-1 bg-surface-container rounded-full text-outline animate-pulse"
-                style={{ animationDelay: `${i * 0.2}s` }}>{s}</span>
-            ))}
-          </div>
-          <span className="text-sm text-outline">Scanning all sources…</span>
+        <div className="flex items-center justify-center gap-2 py-4 text-sm text-outline">
+          <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+          Checking prices…
         </div>
       </div>
     );
@@ -115,8 +110,8 @@ export default function FlightResults({ searchParams, filters = DEFAULT_FILTERS 
           <h1 className="font-headline font-extrabold text-3xl text-primary">
             {originCity} → {destinationCity}
           </h1>
-          <p className="text-sm text-outline mt-1 font-medium">
-            {filtered.length} of {flights.length} results
+          <p className="text-sm text-outline mt-1">
+            {filtered.length}{filtered.length !== flights.length ? ` of ${flights.length}` : ''} flights
             {searchParams.departDate ? ` · ${searchParams.departDate}` : ''}
             {searchParams.returnDate ? ` – ${searchParams.returnDate}` : ''}
           </p>
@@ -148,37 +143,11 @@ export default function FlightResults({ searchParams, filters = DEFAULT_FILTERS 
         ))}
       </div>
 
-      {/* Bento info section */}
-      <div className="grid grid-cols-3 gap-6 pt-12">
-        <div className="col-span-2 bg-surface-container-low p-8 rounded-lg flex items-center gap-8">
-          <div className="flex-1 space-y-4">
-            <h3 className="font-headline font-bold text-2xl text-primary">Hidden City Logic</h3>
-            <p className="text-sm text-on-surface-variant leading-relaxed">
-              Some &ldquo;Hidden City&rdquo; fares let you exit at your actual destination while the plane continues elsewhere.
-              This can be significantly cheaper — but do <strong>not check bags</strong> as they will continue to the final destination.
-              This technique may violate airline terms of service.
-            </p>
-            <a href="https://skiplagged.com/blog/hidden-city-ticketing" target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-widest">
-              Read Guide <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </a>
-          </div>
-          <div className="w-48 h-32 overflow-hidden rounded-lg flex-shrink-0 hidden lg:block">
-            <img
-              src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=400&q=80"
-              alt="Airplane wing over clouds"
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-        <div className="bg-surface-container-highest p-8 rounded-lg space-y-4">
-          <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
-          <h4 className="font-headline font-bold text-xl">Verified Results</h4>
-          <p className="text-sm text-on-surface-variant">
-            Every itinerary is recalculated in real-time using GDS data and direct carrier API access.
-          </p>
-        </div>
-      </div>
+      {/* Hidden city note */}
+      <p className="text-xs text-outline pt-4 border-t border-outline-variant/15">
+        Some fares above may be &ldquo;hidden city&rdquo; tickets — exit at your destination while the plane continues elsewhere.
+        Do not check bags on these routes. Verify all fares on the source before booking.
+      </p>
     </section>
   );
 }

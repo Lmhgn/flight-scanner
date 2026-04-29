@@ -187,21 +187,6 @@ export default function SidebarFilters({ onChange }: Props) {
         </div>
       </div>
 
-      {/* Promo card */}
-      <div className="relative overflow-hidden rounded-lg bg-primary-container p-6">
-        <div className="relative z-10 space-y-2">
-          <h4 className="font-headline font-bold text-xl leading-tight text-on-primary">Unlock Hidden Itineraries</h4>
-          <p className="text-sm text-primary-fixed leading-relaxed">
-            Upgrade to Pro to see secret error fares and cross-alliance routings.
-          </p>
-          <button className="mt-4 px-4 py-2 bg-secondary text-on-secondary text-xs font-bold uppercase tracking-widest rounded-lg hover:opacity-90 transition-opacity">
-            Upgrade Now
-          </button>
-        </div>
-        <div className="absolute -right-4 -bottom-4 opacity-10">
-          <span className="material-symbols-outlined" style={{ fontSize: '100px' }}>flight_takeoff</span>
-        </div>
-      </div>
     </aside>
   );
 }

@@ -7,60 +7,75 @@ interface Props {
   variant?: 'portrait' | 'landscape' | 'compact';
 }
 
-const DEAL_TYPE_BADGE: Record<string, { icon: string; label: string }> = {
-  'Error Fare':   { icon: 'auto_awesome', label: 'ERROR FARE' },
-  "Jack's Find":  { icon: 'auto_awesome', label: 'HIDDEN DEAL' },
-  'Flash Sale':   { icon: 'bolt',          label: 'FLASH DEAL' },
-  'Sale':         { icon: 'trending_down', label: 'PRICE DROP' },
-  'Early Bird':   { icon: 'verified',      label: 'ELITE PICK' },
-};
-
 function buildDealUrl(deal: Deal) {
   return `/deals/${deal.id}`;
 }
 
+// Tiny seeded sparkline showing price trending down to the deal
+function Sparkline({ deal }: { deal: Deal }) {
+  const seed = deal.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const points = Array.from({ length: 10 }, (_, i) => {
+    const t = i / 9;
+    const base = 1 - t * 0.55;
+    const jitter = ((seed * (i + 7) * 431) % 20 - 10) * 0.01;
+    return Math.max(0.1, Math.min(1, base + jitter));
+  });
+  const W = 56;
+  const H = 18;
+  const pts = points
+    .map((v, i) => `${((i / 9) * W).toFixed(1)},${((1 - v) * H).toFixed(1)}`)
+    .join(' ');
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="opacity-60">
+      <polyline points={pts} fill="none" stroke="white" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // Tall portrait card (current month — 3-col grid)
 function PortraitCard({ deal }: { deal: Deal }) {
-  const badge = DEAL_TYPE_BADGE[deal.dealType] ?? DEAL_TYPE_BADGE['Sale'];
   const href = buildDealUrl(deal);
 
   return (
     <Link href={href} className="group cursor-pointer block">
-      <div className="relative aspect-[4/5] rounded-lg overflow-hidden mb-4 bg-surface-container">
+      <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-surface-container">
         <img
           src={deal.imageUrl}
           alt={deal.destination.city}
           loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        {/* Deal type badge + save */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-          <div className="glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
-            <span
-              className="material-symbols-outlined text-secondary text-sm"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              {badge.icon}
-            </span>
-            <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
-          </div>
-          <SaveButton deal={deal} className="glass-badge" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+
+        {/* Save button */}
+        <div className="absolute top-3 right-3">
+          <SaveButton deal={deal} className="bg-black/20 backdrop-blur-sm rounded-full p-1" />
         </div>
 
-        {/* Bottom info overlay */}
-        <div className="absolute bottom-4 left-4 right-4 p-4 bg-white/10 backdrop-blur-md rounded-lg border border-white/20">
+        {/* Savings pill */}
+        <div className="absolute top-3 left-3">
+          <span className="bg-black/30 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+            -{deal.savingsPercent}%
+          </span>
+        </div>
+
+        {/* Bottom overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
           <div className="flex justify-between items-end">
             <div>
-              <p className="text-white/80 text-xs font-label uppercase tracking-widest mb-1">
+              <p className="text-white/60 text-[10px] uppercase tracking-widest mb-0.5">
                 {deal.directFlight ? 'Direct' : '1 stop'} · {deal.flightDuration}
               </p>
-              <h3 className="text-white font-headline text-2xl font-bold leading-none">
+              <h3 className="text-white font-headline text-xl font-bold leading-tight">
                 {deal.destination.city}
               </h3>
+              <p className="text-white/50 text-xs">{deal.destination.country}</p>
             </div>
-            <div className="text-right">
-              <p className="text-white/60 text-xs line-through">£{deal.originalPrice}</p>
-              <p className="text-white font-headline text-3xl font-extrabold leading-none">£{deal.price}</p>
+            <div className="text-right space-y-1">
+              <Sparkline deal={deal} />
+              <p className="text-white font-headline text-2xl font-extrabold leading-none">£{deal.price}</p>
+              <p className="text-white/40 text-[10px] line-through">£{deal.originalPrice}</p>
             </div>
           </div>
         </div>
@@ -71,11 +86,10 @@ function PortraitCard({ deal }: { deal: Deal }) {
 
 // Featured landscape card (next month — 2-wide)
 export function FeaturedCard({ deal }: { deal: Deal }) {
-  const badge = DEAL_TYPE_BADGE[deal.dealType] ?? DEAL_TYPE_BADGE['Sale'];
   const href = buildDealUrl(deal);
 
   return (
-    <Link href={href} className="md:col-span-2 relative h-[320px] rounded-lg overflow-hidden group cursor-pointer block">
+    <Link href={href} className="md:col-span-2 relative h-[320px] rounded-xl overflow-hidden group cursor-pointer block">
       <img
         src={deal.imageUrl}
         alt={deal.destination.city}
@@ -83,24 +97,23 @@ export function FeaturedCard({ deal }: { deal: Deal }) {
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-        <div className="glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-secondary text-sm"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            {badge.icon}
-          </span>
-          <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
-        </div>
-        <SaveButton deal={deal} className="glass-badge" />
+
+      <div className="absolute top-3 right-3">
+        <SaveButton deal={deal} className="bg-black/20 backdrop-blur-sm rounded-full p-1" />
       </div>
+
+      <div className="absolute top-3 left-3">
+        <span className="bg-black/30 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+          -{deal.savingsPercent}%
+        </span>
+      </div>
+
       <div className="absolute bottom-6 left-6 flex justify-between items-end w-[calc(100%-3rem)]">
         <div>
           <h3 className="text-white font-headline text-3xl font-bold">
-            {deal.destination.city}, {deal.destination.country.slice(0, 2).toUpperCase()}
+            {deal.destination.city}
           </h3>
-          <p className="text-white/70 font-label text-sm">{deal.tags[0]}</p>
+          <p className="text-white/60 text-sm">{deal.destination.country} · {deal.tags[0]}</p>
         </div>
         <div className="text-right">
           <p className="text-white font-headline text-4xl font-extrabold">£{deal.price}</p>
@@ -114,7 +127,7 @@ export function FeaturedCard({ deal }: { deal: Deal }) {
 export function RegularCard({ deal }: { deal: Deal }) {
   const href = buildDealUrl(deal);
   return (
-    <Link href={href} className="relative h-[320px] rounded-lg overflow-hidden group cursor-pointer block">
+    <Link href={href} className="relative h-[320px] rounded-xl overflow-hidden group cursor-pointer block">
       <img
         src={deal.imageUrl}
         alt={deal.destination.city}
@@ -122,9 +135,14 @@ export function RegularCard({ deal }: { deal: Deal }) {
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+      <div className="absolute top-3 left-3">
+        <span className="bg-black/30 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+          -{deal.savingsPercent}%
+        </span>
+      </div>
       <div className="absolute bottom-4 left-4">
         <h3 className="text-white font-headline text-xl font-bold leading-tight">
-          {deal.destination.city}, {deal.destination.country.slice(0, 2).toUpperCase()}
+          {deal.destination.city}
         </h3>
         <p className="text-white font-headline text-2xl font-extrabold">£{deal.price}</p>
       </div>
@@ -140,20 +158,16 @@ export function CompactCard({ deal, isFirst }: { deal: Deal; isFirst?: boolean }
       href={href}
       className="bg-surface-container-lowest p-6 hover:bg-surface-bright transition-colors cursor-pointer block"
     >
-      {isFirst && (
-        <span className="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter mb-4 inline-block">
-          Flash Deal
-        </span>
-      )}
-      <h3 className="font-headline text-xl font-bold text-primary mb-1">
+      <h3 className="font-headline text-xl font-bold text-primary mb-0.5">
         {deal.destination.city}
       </h3>
-      <p className="text-outline text-xs mb-4">{deal.tags[0]}</p>
+      <p className="text-outline text-xs mb-4">{deal.destination.country}</p>
       <div className="flex items-end justify-between">
-        <p className="font-headline text-2xl font-extrabold">£{deal.price}</p>
-        <span className="material-symbols-outlined text-primary">
-          {isFirst ? 'bolt' : 'chevron_right'}
-        </span>
+        <div>
+          <p className="text-[10px] text-outline line-through mb-0.5">£{deal.originalPrice}</p>
+          <p className="font-headline text-2xl font-extrabold">£{deal.price}</p>
+        </div>
+        <span className="text-xs font-bold text-secondary">-{deal.savingsPercent}%</span>
       </div>
     </Link>
   );
