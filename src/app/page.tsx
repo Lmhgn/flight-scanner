@@ -1,10 +1,13 @@
 import Header from '@/components/Header';
 import SearchForm from '@/components/SearchForm';
 import DealsSection from '@/components/DealsSection';
-import { getMockDeals } from '@/lib/mockDeals';
+import LastMinuteSection from '@/components/LastMinuteSection';
+import FlexibleDateGrid from '@/components/FlexibleDateGrid';
+import { getMockDeals, getLastMinuteDeals } from '@/lib/mockDeals';
 
 export default function HomePage() {
   const deals = getMockDeals();
+  const lastMinute = getLastMinuteDeals();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -28,6 +31,12 @@ export default function HomePage() {
         <section className="mb-20">
           <SearchForm />
         </section>
+
+        {/* Last-minute deals */}
+        <LastMinuteSection deals={lastMinute} />
+
+        {/* Flexible date grid */}
+        <FlexibleDateGrid />
 
         {/* Rolling deals by month */}
         <DealsSection deals={deals} />

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:static": "BASE_PATH=/flight-scanner node scripts/build-static.js",
     "start": "next start",
     "lint": "next lint"
   },

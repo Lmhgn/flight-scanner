@@ -47,6 +47,11 @@ export const POPULAR_AIRPORTS: Airport[] = [
   { code: 'CUN', name: 'Cancun', city: 'Cancun', country: 'Mexico', flag: '🇲🇽' },
   { code: 'GRU', name: 'Sao Paulo Guarulhos', city: 'Sao Paulo', country: 'Brazil', flag: '🇧🇷' },
   { code: 'ORD', name: 'Chicago O\'Hare', city: 'Chicago', country: 'USA', flag: '🇺🇸' },
+  { code: 'EDI', name: 'Edinburgh', city: 'Edinburgh', country: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'BRU', name: 'Brussels', city: 'Brussels', country: 'Belgium', flag: '🇧🇪' },
+  { code: 'VIE', name: 'Vienna', city: 'Vienna', country: 'Austria', flag: '🇦🇹' },
+  { code: 'GVA', name: 'Geneva', city: 'Geneva', country: 'Switzerland', flag: '🇨🇭' },
+  { code: 'ARN', name: 'Stockholm Arlanda', city: 'Stockholm', country: 'Sweden', flag: '🇸🇪' },
 ];
 
 export function findAirport(query: string): Airport | undefined {

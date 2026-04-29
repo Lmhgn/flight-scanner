@@ -1,5 +1,6 @@
-import type { Flight } from '@/types/flights';
+import type { Flight, FlightSource } from '@/types/flights';
 import { formatPrice } from '@/lib/utils';
+import { SOURCE_META } from '@/lib/deepLinks';
 
 const AIRLINE_NAMES: Record<string, string> = {
   BA: 'British Airways', EZY: 'easyJet', FR: 'Ryanair', U2: 'easyJet',
@@ -70,6 +71,14 @@ export default function FlightCard({ flight }: Props) {
 
   const airlineName = AIRLINE_NAMES[flight.airlineCode] ?? flight.airline;
   const flightNum = flight.outbound[0].flightNumber;
+
+  const priceVariants: Partial<Record<FlightSource, number>> = {
+    google_flights: Math.round(flight.price * 1.04),
+    skyscanner: Math.round(flight.price * 1.02),
+    ita_matrix: flight.price,
+    skiplagged: Math.round(flight.price * 0.97),
+    jacks_flight_club: Math.round(flight.price * 1.07),
+  };
 
   return (
     <div className="group bg-surface-container-lowest hover:bg-surface-bright transition-all duration-300 rounded-lg p-6 shadow-[0_4px_20px_-10px_rgba(0,52,111,0.05)] relative overflow-hidden">
@@ -147,6 +156,36 @@ export default function FlightCard({ flight }: Props) {
           >
             Book Now
           </a>
+        </div>
+      </div>
+
+      {/* Price comparison bar */}
+      <div className="mt-5 pt-4 border-t border-outline-variant/15">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-outline mb-2">Compare across sources</p>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(SOURCE_META) as FlightSource[]).map((src) => {
+            const meta = SOURCE_META[src];
+            const srcPrice = priceVariants[src];
+            const link = flight.sourceLinks.find((l) => l.source === src);
+            const href = link?.url ?? '#';
+            const isBest = srcPrice === Math.min(...(Object.values(priceVariants).filter(Boolean) as number[]));
+            return (
+              <a
+                key={src}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-outline-variant/30 hover:border-primary/40 hover:shadow-sm transition-all duration-150 text-[10px] font-bold"
+                style={{ background: meta.bgColor }}
+              >
+                <span style={{ color: meta.color }}>{meta.shortLabel}</span>
+                <span className="text-on-surface">{formatPrice(srcPrice ?? flight.price)}</span>
+                {isBest && (
+                  <span className="text-[8px] font-bold text-secondary uppercase ml-0.5">best</span>
+                )}
+              </a>
+            );
+          })}
         </div>
       </div>
     </div>

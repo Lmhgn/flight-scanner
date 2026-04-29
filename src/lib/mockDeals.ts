@@ -22,7 +22,13 @@ function datesInMonth(monthOffset: number, dayOfMonth: number): { dep: string; r
   return { dep, ret };
 }
 
-const DESTINATION_IMAGES: Record<string, string> = {
+export const DESTINATION_IMAGES: Record<string, string> = {
+  CDG: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&q=80',
+  EDI: 'https://images.unsplash.com/photo-1506377872008-6645d9d29ef7?auto=format&fit=crop&w=600&q=80',
+  BRU: 'https://images.unsplash.com/photo-1562880949-2f8928f5f4f5?auto=format&fit=crop&w=600&q=80',
+  VIE: 'https://images.unsplash.com/photo-1516550893923-42d28e5677af?auto=format&fit=crop&w=600&q=80',
+  GVA: 'https://images.unsplash.com/photo-1574634534894-89d7576c8259?auto=format&fit=crop&w=600&q=80',
+  ARN: 'https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=600&q=80',
   DUB: 'https://images.unsplash.com/photo-1548662880791-b5b07b1a1ee3?auto=format&fit=crop&w=600&q=80',
   AMS: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=600&q=80',
   KRK: 'https://images.unsplash.com/photo-1547435009-49bfe2da9d30?auto=format&fit=crop&w=600&q=80',
@@ -267,6 +273,52 @@ export function getMockDeals(): Deal[] {
       flightDuration: raw.flightDuration,
       directFlight: raw.directFlight,
       countryCode: destination?.country?.slice(0, 2).toUpperCase(),
+    };
+  });
+}
+
+interface LastMinuteRaw {
+  destCode: string; price: number; originalPrice: number;
+  airline: string; daysFromNow: number; departureAirport: LondonAirport;
+  category: DestinationCategory; flightDuration: string; directFlight: boolean;
+  nights: number; dealType: string; tags: string[];
+}
+
+const LAST_MINUTE_RAW: LastMinuteRaw[] = [
+  { destCode: 'CDG', price: 22, originalPrice: 89, airline: 'easyJet', daysFromNow: 1, departureAirport: 'LTN', category: 'european-city', flightDuration: '1h 20m', directFlight: true, nights: 3, dealType: 'Flash Sale', tags: ['Leaving tomorrow', 'Direct'] },
+  { destCode: 'DUB', price: 18, originalPrice: 72, airline: 'Ryanair', daysFromNow: 2, departureAirport: 'STN', category: 'european-city', flightDuration: '1h 25m', directFlight: true, nights: 3, dealType: 'Flash Sale', tags: ['2 days away', 'Budget'] },
+  { destCode: 'EDI', price: 29, originalPrice: 85, airline: 'easyJet', daysFromNow: 3, departureAirport: 'LGW', category: 'european-city', flightDuration: '1h 30m', directFlight: true, nights: 4, dealType: 'Sale', tags: ['Long weekend', 'UK escape'] },
+  { destCode: 'AMS', price: 34, originalPrice: 98, airline: 'easyJet', daysFromNow: 4, departureAirport: 'LTN', category: 'european-city', flightDuration: '1h 15m', directFlight: true, nights: 3, dealType: 'Flash Sale', tags: ['4 days away', 'Weekend'] },
+  { destCode: 'BRU', price: 26, originalPrice: 79, airline: 'Ryanair', daysFromNow: 5, departureAirport: 'STN', category: 'european-city', flightDuration: '1h 10m', directFlight: true, nights: 3, dealType: 'Flash Sale', tags: ['Spontaneous', 'Direct'] },
+  { destCode: 'PRG', price: 31, originalPrice: 95, airline: 'Wizz Air', daysFromNow: 6, departureAirport: 'LTN', category: 'european-city', flightDuration: '2h 00m', directFlight: true, nights: 4, dealType: 'Flash Sale', tags: ['6 days away', 'Budget'] },
+];
+
+export function getLastMinuteDeals(): Deal[] {
+  return LAST_MINUTE_RAW.map((raw, idx): Deal => {
+    const destination = findDest(raw.destCode);
+    const origin = { ...LONDON_AIRPORTS[raw.departureAirport] };
+    const dep = format(addDays(new Date(), raw.daysFromNow), 'yyyy-MM-dd');
+    const ret = format(addDays(new Date(), raw.daysFromNow + raw.nights), 'yyyy-MM-dd');
+    const savingsPercent = Math.round((1 - raw.price / raw.originalPrice) * 100);
+
+    const searchParams = {
+      origin: raw.departureAirport, destination: raw.destCode,
+      departureDate: dep, returnDate: ret, adults: 1, cabinClass: 'ECONOMY' as const,
+    };
+
+    return {
+      id: `lm-${idx}`,
+      origin, destination,
+      departureDate: dep, returnDate: ret,
+      nights: raw.nights, price: raw.price, originalPrice: raw.originalPrice,
+      savingsPercent, currency: 'GBP', airline: raw.airline,
+      dealScore: 'great', dealType: raw.dealType,
+      month: format(new Date(), 'yyyy-MM'),
+      sourceLinks: buildAllSourceLinks(searchParams),
+      category: raw.category, departureAirport: raw.departureAirport,
+      tags: raw.tags,
+      imageUrl: DESTINATION_IMAGES[raw.destCode] ?? 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=600&q=80',
+      flightDuration: raw.flightDuration, directFlight: raw.directFlight,
     };
   });
 }

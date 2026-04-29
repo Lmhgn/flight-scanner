@@ -1,5 +1,6 @@
 import type { Deal } from '@/types/flights';
 import Link from 'next/link';
+import SaveButton from './SaveButton';
 
 interface Props {
   deal: Deal;
@@ -42,15 +43,18 @@ function PortraitCard({ deal }: { deal: Deal }) {
           loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        {/* Deal type badge */}
-        <div className="absolute top-4 right-4 glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-secondary text-sm"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            {badge.icon}
-          </span>
-          <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
+        {/* Deal type badge + save */}
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+          <div className="glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
+            <span
+              className="material-symbols-outlined text-secondary text-sm"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              {badge.icon}
+            </span>
+            <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
+          </div>
+          <SaveButton deal={deal} className="glass-badge" />
         </div>
 
         {/* Bottom info overlay */}
@@ -89,14 +93,17 @@ export function FeaturedCard({ deal }: { deal: Deal }) {
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      <div className="absolute top-4 right-4 glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
-        <span
-          className="material-symbols-outlined text-secondary text-sm"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          {badge.icon}
-        </span>
-        <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+        <div className="glass-badge px-3 py-1.5 rounded-full flex items-center gap-2">
+          <span
+            className="material-symbols-outlined text-secondary text-sm"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            {badge.icon}
+          </span>
+          <span className="text-secondary font-bold text-xs font-label">{badge.label}</span>
+        </div>
+        <SaveButton deal={deal} className="glass-badge" />
       </div>
       <div className="absolute bottom-6 left-6 flex justify-between items-end w-[calc(100%-3rem)]">
         <div>
